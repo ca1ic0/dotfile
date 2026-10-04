@@ -32,6 +32,23 @@ uv run python dotfile.py install                 # 等价于 gen + bash, 免落�
 uv run python dotfile.py install --dry-run
 ```
 
+## TUI 交互 (gum)
+
+生成的脚本带终端交互界面, 依赖 [gum](https://github.com/charmbracelet/gum)
+(charmbracelet 出品的单文件静态二进制)。**gum 是必须依赖, 脚本自动安装**:
+`PATH` 里没有就从 GitHub release 下载到 `~/.local/bin` (免 root, 全发行版通吃;
+缺 curl 时按目标 family 先装 curl); 可用 `GUM_VERSION=v2.0.2` 环境变量固定版本。
+
+有终端时 (直接 `bash install-xxx.sh`):
+
+1. **模块复选清单** — ↑↓ 移动、空格勾选、回车确认 (默认全选; gen 时的组选择决定清单内容)
+2. **安装确认** — 显示将安装的模块数
+3. **逐步进度** — 每步 spinner + 完成 ✓; 命令原始输出收进日志文件, 失败自动展示尾部
+4. 结束汇总样式框, 附日志路径
+
+无终端 (CI、`curl | bash` 管道) 自动降级为逐行日志模式并安装全部模块;
+`--yes` 跳过选择直接装全部, `--no-tui` 强制日志模式, `--dry-run` 只打印动作。
+
 ## 选择装什么: 软件包组
 
 模块用 `groups` 标签声明归属, 缺省组为 `base` (不传参只装 base):
@@ -126,17 +143,19 @@ tests/integration_remote.sh                   # 远程 docker 集成测试 (默�
 ## CI: 自动生成安装脚本
 
 `targets.toml` 声明构建目标清单, 每次 push 由 GitHub Actions
-(`.github/workflows/gen-scripts.yml`) 逐个执行 `gen --all`, 产物落在 `script/`,
-有变更则自动提交回仓库:
+(`.github/workflows/gen-scripts.yml`) 逐个执行 `gen --all` (自动含全部模块,
+供目标机 TUI 勾选), 产物落在 `script/`, 有变更则自动提交回仓库:
 
 ```bash
 uv run python dotfile.py gen --all            # 本地等价操作, 输出到 script/
 ```
 
-目标机上可以不 clone 本仓库, 直接取用 raw 链接:
+目标机上可以不 clone 本仓库, 直接取用 raw 链接 (管道方式无 TUI, 装全部模块;
+想要交互选择, 先下载成文件再执行):
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/ca1ic0/dotfile/main/script/install-ubuntu-24.04.sh | bash
+curl -fsSL -o install.sh https://raw.githubusercontent.com/ca1ic0/dotfile/main/script/install-ubuntu-24.04.sh
+bash install.sh        # TUI 勾选模块
 ```
 
 给模块补了新发行版的 OS 段后, 把目标加进 `targets.toml` 即可纳入批量生成;

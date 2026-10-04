@@ -25,7 +25,10 @@ REMOTE_CMD="docker run --rm -i $IMAGE bash -c '
   && command -v git \
   && command -v jq \
   && command -v nvim \
-  && \$HOME/.local/bin/starship --version
+  && \$HOME/.local/bin/starship --version \
+  && \$HOME/.local/bin/gum --version \
+  && \$HOME/.local/bin/gum spin --spinner dot --title smoke -- true \
+  && echo gum-smoke-OK
 '"
 
 echo "==> 在 $HOST 的 $IMAGE 容器中真实执行"

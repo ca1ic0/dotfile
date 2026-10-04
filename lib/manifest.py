@@ -10,6 +10,7 @@ module.toml 内容 = [module] 元数据 + 若干 OS 段 (debian / rocky / "rocky
 
 from __future__ import annotations
 
+import re
 from dataclasses import dataclass, field
 from pathlib import Path
 
@@ -83,6 +84,9 @@ def load_module(module_dir: Path) -> Module:
     name = name.strip()
     if name != module_dir.name:
         raise _err(module_dir, f"[module] name ({name!r}) 与目录名 ({module_dir.name!r}) 不一致")
+    # 生成物中 name 会成为 bash 函数名 df_mod_<name>
+    if not re.fullmatch(r"[a-z0-9][a-z0-9-]*", name):
+        raise _err(module_dir, f"[module] name 只允许小写字母/数字/连字符: {name!r}")
 
     description = mod.get("description", "")
     if not isinstance(description, str):

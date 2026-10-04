@@ -43,11 +43,28 @@ class TestRenderE2E(unittest.TestCase):
         self.assertIn('export DOTFILES_FAMILY="debian"', self.script_all)
 
     def test_commands_and_script_embedded(self):
-        self.assertIn("df_run 'sudo apt-get install -y git'", self.script_all)
-        self.assertIn("df_run 'sudo apt-get install -y neovim ripgrep fd-find curl'", self.script_all)
+        self.assertIn("df_step 'sudo apt-get install -y git'", self.script_all)
+        self.assertIn("df_step 'sudo apt-get install -y neovim ripgrep fd-find curl'", self.script_all)
         # starship 的官方安装脚本被完整嵌入
         self.assertIn("https://starship.rs/install.sh", self.script_all)
-        self.assertIn('info "  $ bash <嵌入脚本: ./scripts/install.sh>"', self.script_all)
+        self.assertIn("df_step_embed \"$DF_TMPDIR/script-01.sh\" './scripts/install.sh'", self.script_all)
+
+    def test_tui_structure(self):
+        # gum 自动引导 + 交互选择 + 模块注册表
+        self.assertIn("df_ensure_gum", self.script_all)
+        self.assertIn("charmbracelet/gum/releases/latest", self.script_all)
+        self.assertIn('"$DF_GUM" choose --no-limit', self.script_all)
+        self.assertIn('"$DF_GUM" confirm', self.script_all)
+        self.assertIn('"$DF_GUM" spin --spinner dot', self.script_all)
+        self.assertIn("DF_MODULES=(essentials git neovim starship)", self.script_all)
+        self.assertIn("df_mod_starship()", self.script_all)
+        self.assertIn("df_requires_essentials=''", self.script_all)
+        self.assertIn("df_check_requires", self.script_all)
+        # 降级模式与跳过选择
+        self.assertIn("--no-tui)", self.script_all)
+        self.assertIn("--yes|-y)", self.script_all)
+        # 非 TTY 时安装全部模块
+        self.assertIn('DF_PICKED=("${DF_MODULES[@]}")', self.script_all)
 
     def test_no_symlink_and_delim_unique(self):
         self.assertNotIn("ln -s", self.script_all)

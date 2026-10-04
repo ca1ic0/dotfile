@@ -81,6 +81,9 @@ def cmd_gen(args, argv: list[str]) -> int:
         if args.target:
             print("错误: --all 与 --target 互斥", file=sys.stderr)
             return 2
+        # 批量产物含全部模块, 供目标机上 TUI 运行时勾选子集
+        if not args.groups:
+            args.groups = "all"
         out_dir = Path(args.dir)
         out_dir.mkdir(parents=True, exist_ok=True)
         for spec in _load_ci_targets():
