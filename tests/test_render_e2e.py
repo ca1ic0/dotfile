@@ -53,7 +53,9 @@ class TestRenderE2E(unittest.TestCase):
         # gum 自动引导 + 交互选择 + 模块注册表
         self.assertIn("df_ensure_gum", self.script_all)
         self.assertIn("charmbracelet/gum/releases/latest", self.script_all)
-        self.assertIn('"$DF_GUM" choose --no-limit', self.script_all)
+        self.assertIn('"$DF_GUM" choose --no-limit --ordered', self.script_all)
+        self.assertIn("x 勾选/取消", self.script_all)  # gum 2.x 切换键是 x, 不是空格
+        self.assertIn('--selected-prefix "[✅] "', self.script_all)
         self.assertIn('"$DF_GUM" confirm', self.script_all)
         self.assertIn('"$DF_GUM" spin --spinner dot', self.script_all)
         self.assertIn("DF_MODULES=(essentials git neovim starship)", self.script_all)
