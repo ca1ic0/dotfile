@@ -257,8 +257,11 @@ if [ "$DF_TUI_SEL" -eq 1 ]; then
     DF_DEFAULTS="$DF_DEFAULTS,$df_n — $df_d"
   done
   # 注意: gum 的 TUI 渲染在 stderr, 结果走 stdout — 不能重定向 stderr, 否则界面不可见
-  DF_PICKED_RAW="$("$DF_GUM" choose --no-limit \
-    --header "选择要安装的模块 (空格勾选, 回车确认) — 目标: debian@12" \
+  # 注意: gum 2.x 的勾选/取消键是 x (空格无效); --ordered 保持注册表顺序输出
+  DF_PICKED_RAW="$("$DF_GUM" choose --no-limit --ordered \
+    --header "选择要安装的模块 (↑↓ 移动, x 勾选/取消, 回车确认) — 目标: debian@12" \
+    --selected-prefix "[✅] " --unselected-prefix "[  ] " \
+    --selected.foreground 2 --item.foreground 7 \
     --selected "${DF_DEFAULTS#,}" "${DF_ITEMS[@]}" || true)"
   if [ -z "$DF_PICKED_RAW" ]; then
     info "未选择任何模块, 退出"
