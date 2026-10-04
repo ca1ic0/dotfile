@@ -140,6 +140,9 @@ def cmd_plan(args, argv: list[str]) -> int:
         m = pm.module
         req = f" (requires: {', '.join(m.requires)})" if m.requires else ""
         print(f"\n{i}. {m.name}  [段: {pm.section}]{req}")
+        for j, c in enumerate(m.content):
+            branch = "└─" if j == len(m.content) - 1 else "├─"
+            print(f"     {branch} {c}")
         for step in pm.steps:
             if step.kind == "cmd":
                 print(f"   $ {step.command}")
@@ -163,7 +166,7 @@ def cmd_list(args, argv: list[str]) -> int:
     name_w = max(len(m.name) for m in modules)
     for m in sorted(modules, key=lambda x: (x.order, x.name)):
         print(f"{m.name:<{name_w}}  order={m.order:<4} groups={','.join(m.groups):<12} "
-              f"段={','.join(sorted(str(k) for k in m.recipes)):<28} {m.description}")
+              f"段={','.join(sorted(str(k) for k in m.recipes)):<28} 内容={len(m.content):<3} {m.description}")
     return 0
 
 

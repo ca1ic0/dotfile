@@ -47,8 +47,20 @@ uv run python dotfile.py install --dry-run
 4. 结束汇总样式框, 附日志路径
 
 **选择的最小单位是模块 (软件包)**: 模块内的软件不可拆分勾选 — 例如 essentials
-里的 htop/tree/curl/jq 是同一条配方命令, 要么全装要么全不装。想要更细的粒度,
-在仓库里把模块拆开 (各自独立目录), 而不是在选择界面做子项展开。
+里的 htop/tree/curl/jq 是同一条配方命令, 要么全装要么全不装。模块声明了 `content`
+时, 选择清单里会在模块下方以树状展示其内容 (子项纯展示, 勾选作用于整个模块):
+
+```
+[✅] essentials — 常用 CLI 工具
+     ├─ htop
+     ├─ tree
+     ├─ curl
+     └─ jq
+[✅] git — Git 版本控制
+     └─ git
+```
+
+想要更细的可选粒度, 在仓库里把模块拆开 (各自独立目录), 而不是在选择界面做子项展开。
 
 无终端 (CI、`curl | bash` 管道) 自动降级为逐行日志模式并安装全部模块;
 `--yes` 跳过选择直接装全部, `--no-tui` 强制日志模式, `--dry-run` 只打印动作。
@@ -72,11 +84,12 @@ uv run python dotfile.py gen --target ubuntu@24.04 --without-modules starship   
 
 ```toml
 [module]
-name = "docker"                # 必须与目录名一致
+name = "docker"                # 必须与目录名一致, 且只允许 [a-z0-9-]
 description = "Docker 容器引擎"
 groups = ["dev"]               # 缺省 ["base"]
 order = 20                     # 越小越先执行, 缺省 100
 requires = []                  # 依赖的其他模块名 (生成时校验已选中, 并约束执行顺序)
+content = ["docker-ce", "containerd"]   # 可选: 软件包内容, 选择界面/plan 中树状展示 (纯展示)
 
 [debian]                       # family 段: ubuntu/debian 命中
 install = "sudo apt-get install -y docker.io"

@@ -237,9 +237,9 @@ if [ "$DF_TUI_SEL" -eq 1 ]; then
   DF_ITEMS=()
   DF_DEFAULTS=""
   for df_n in "${DF_MODULES[@]}"; do
-    eval "df_d=\"\$df_desc_$df_n\""
-    DF_ITEMS+=("$df_n — $df_d")
-    DF_DEFAULTS="$DF_DEFAULTS,$df_n — $df_d"
+    eval "df_it=\"\$df_item_$df_n\""    # 多行条目: 首行模块名 + 树状内容 (整体一个选项)
+    DF_ITEMS+=("$df_it")
+    DF_DEFAULTS="$DF_DEFAULTS,$df_it"
   done
   # 注意: gum 的 TUI 渲染在 stderr, 结果走 stdout — 不能重定向 stderr, 否则界面不可见
   # 注意: gum 2.x 的勾选/取消键是 x (空格无效); --ordered 保持注册表顺序输出
@@ -287,6 +287,18 @@ def shq(s: str) -> str:
     return "'" + s.replace("'", "'\\''") + "'"
 
 
+def _item_text(name: str, desc: str, content: list[str]) -> str:
+    """选择清单条目: 首行模块名, 有 content 时追加树状子项 (纯展示, 不可单独勾选)。
+
+    子项缩进 5 空格, 与 "[✅] " 前缀宽度对齐; 末项用 └─, 其余 ├─。
+    """
+    lines = [f"{name} — {desc}" if desc else name]
+    for i, c in enumerate(content):
+        branch = "└─" if i == len(content) - 1 else "├─"
+        lines.append(f"     {branch} {c}")
+    return "\n".join(lines)
+
+
 def render(plan: Plan, gen_command: str = "./dotfile.py gen ...") -> str:
     target = plan.target
     prelude = _PRELUDE.format(
@@ -299,7 +311,7 @@ def render(plan: Plan, gen_command: str = "./dotfile.py gen ...") -> str:
 
     parts: list[str] = [prelude]
 
-    # 模块注册表: 描述/依赖/命中段 以变量声明, 函数体在后
+    # 模块注册表: 描述/依赖/命中段/树状条目以变量声明, 函数体在后
     names = [p.module.name for p in plan.modules]
     parts.append(f"DF_MODULES=({' '.join(names)})\n")
     for p in plan.modules:
@@ -307,6 +319,9 @@ def render(plan: Plan, gen_command: str = "./dotfile.py gen ...") -> str:
         parts.append(f"df_desc_{m.name}={shq(m.description)}\n")
         parts.append(f"df_requires_{m.name}={shq(' '.join(m.requires))}\n")
         parts.append(f"DF_SECTION_{m.name}={shq(str(p.section))}\n")
+        parts.append(
+            f"df_item_{m.name}={shq(_item_text(m.name, m.description, m.content))}\n"
+        )
 
     # 嵌入脚本 (先落到临时目录)
     script_idx = 0

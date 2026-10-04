@@ -3,6 +3,7 @@ name = "starship"
 description = "Starship 终端提示符 (官方脚本安装到 ~/.local/bin)"
 groups = ["dev"]
 order = 30
+content = ["starship"]
 
 [debian]
 install = ["sudo apt-get install -y curl", "./scripts/install.sh"]

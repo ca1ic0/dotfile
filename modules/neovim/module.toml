@@ -3,6 +3,7 @@ name = "neovim"
 description = "Neovim 编辑器 + 常用依赖"
 groups = ["dev"]
 order = 20
+content = ["neovim", "ripgrep", "fd-find"]
 
 [debian]
 install = "sudo apt-get install -y neovim ripgrep fd-find curl"

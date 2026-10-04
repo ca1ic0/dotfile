@@ -3,6 +3,7 @@ name = "git"
 description = "Git 版本控制"
 groups = ["base"]
 order = 10
+content = ["git"]
 
 [debian]
 install = "sudo apt-get install -y git"

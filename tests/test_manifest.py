@@ -73,6 +73,8 @@ install = "echo c"
             "段内未知字段": '[module]\nname = "demo"\n\n[debian]\ninstall = "x"\nnote = "hi"\n',
             "无 OS 段": '[module]\nname = "demo"\n',
             "groups 空": '[module]\nname = "demo"\ngroups = []\n\n[debian]\ninstall = "x"\n',
+            "content 非数组": '[module]\nname = "demo"\ncontent = "htop"\n\n[debian]\ninstall = "x"\n',
+            "content 含空串": '[module]\nname = "demo"\ncontent = ["htop", ""]\n\n[debian]\ninstall = "x"\n',
             "order 非整数": '[module]\nname = "demo"\norder = "9"\n\n[debian]\ninstall = "x"\n',
             "脚本不存在": '[module]\nname = "demo"\n\n[debian]\ninstall = "./scripts/none.sh"\n',
             "脚本越出模块目录": '[module]\nname = "demo"\n\n[debian]\ninstall = "./../outside.sh"\n',

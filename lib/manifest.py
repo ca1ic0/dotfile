@@ -34,6 +34,7 @@ class Module:
     order: int
     groups: list[str]
     requires: list[str]
+    content: list[str] = field(default_factory=list)  # 软件包内容 (纯展示, 树状呈现给用户)
     recipes: dict[distro.SectionKey, list[str]] = field(default_factory=dict)  # 规范化段键 -> 命令列表
     path: Path = field(default_factory=Path)
 
@@ -110,7 +111,12 @@ def load_module(module_dir: Path) -> Module:
         raise _err(module_dir, "[module] requires 必须是字符串数组")
     requires = [r.strip() for r in requires]
 
-    unknown_meta = set(mod) - {"name", "description", "order", "groups", "requires"}
+    content = mod.get("content", [])
+    if not isinstance(content, list) or not all(isinstance(c, str) and c.strip() for c in content):
+        raise _err(module_dir, "[module] content 必须是非空字符串数组 (软件包内容的树状展示)")
+    content = [c.strip() for c in content]
+
+    unknown_meta = set(mod) - {"name", "description", "order", "groups", "requires", "content"}
     if unknown_meta:
         raise _err(module_dir, f"[module] 含未知字段: {sorted(unknown_meta)}")
 
@@ -142,6 +148,7 @@ def load_module(module_dir: Path) -> Module:
         order=order,
         groups=groups,
         requires=requires,
+        content=content,
         recipes=recipes,
         path=module_dir,
     )

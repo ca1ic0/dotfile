@@ -62,6 +62,11 @@ class TestRenderE2E(unittest.TestCase):
         self.assertIn("df_mod_starship()", self.script_all)
         self.assertIn("df_requires_essentials=''", self.script_all)
         self.assertIn("df_check_requires", self.script_all)
+        # 树状内容条目: 多行整体作为一个选项
+        self.assertIn("df_item_essentials=", self.script_all)
+        self.assertIn("     ├─ htop", self.script_all)
+        self.assertIn("     └─ jq", self.script_all)
+        self.assertIn('eval "df_it=\\"\\$df_item_$df_n\\""', self.script_all)
         # 降级模式与跳过选择
         self.assertIn("--no-tui)", self.script_all)
         self.assertIn("--yes|-y)", self.script_all)
