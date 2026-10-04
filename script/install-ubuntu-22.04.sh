@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # 由 dotfile 生成器产出 — 请勿手改; 变更请回到仓库重新 gen
 # 生成命令: ./dotfile.py gen --all
-set -euo pipefail
+set -Eeuo pipefail
 
 EXPECTED_ID="ubuntu"
 EXPECTED_VERSION="22.04"
@@ -46,8 +46,14 @@ export DF_LOG
 DF_RUNNER="$DF_TMPDIR/runner.sh"
 cat > "$DF_RUNNER" <<'DF_RUNNER_EOF'
 #!/usr/bin/env bash
-# gum spin 的命令包装: 输出全部收进日志文件
-exec >>"$DF_LOG" 2>&1
+# gum spin 的命令包装: 输出全部收进日志文件, stdin 与终端完全隔离
+# (否则 apt 的 debconf 交互提示会在日志里静默等键盘输入, 造成 spinner 死锁)
+export DEBIAN_FRONTEND=noninteractive
+exec </dev/null >>"$DF_LOG" 2>&1
+# root 且无 sudo 二进制的环境 (容器常见): 透传 — 命令在独立子进程跑, 主脚本的垫片传不进来
+if [ "$(id -u)" = 0 ] && ! command -v sudo >/dev/null 2>&1; then
+  sudo() { "$@"; }
+fi
 eval "$1"
 DF_RUNNER_EOF
 
@@ -60,6 +66,7 @@ on_exit() {
   exit "$df_ret"
 }
 trap on_exit EXIT
+trap 'err "失败命令: $BASH_COMMAND"' ERR   # 定位无声失败
 
 df_ver_prefix_ok() {
   local IFS='.'
@@ -154,7 +161,7 @@ df_module_header() {  # $1=模块名 $2=配方段
 df_fail() {  # $1=步骤描述
   if [ "$DF_TUI_PROG" -eq 1 ]; then
     "$DF_GUM" style --bold --foreground 196 "  ✗ $1"
-    "$DF_GUM" style --foreground 245 "-- 日志尾部 ($DF_LOG):"
+    "$DF_GUM" style --foreground 245 "日志尾部 ($DF_LOG):"
     tail -n 15 "$DF_LOG" | "$DF_GUM" style --foreground 245
   else
     err "步骤失败: $1 (日志: $DF_LOG)"
@@ -162,6 +169,11 @@ df_fail() {  # $1=步骤描述
   fi
   exit 1
 }
+
+# root 且无 sudo 二进制的环境 (常见于容器): sudo 透传, 配方无需改写
+if [ "$(id -u)" = 0 ] && ! command -v sudo >/dev/null 2>&1; then
+  sudo() { "$@"; }
+fi
 
 df_step() {  # $1=命令字符串
   if [ "$DF_DRY_RUN" -eq 1 ]; then info "  \$ $1"; return 0; fi
@@ -271,7 +283,9 @@ if [ "$DF_TUI_SEL" -eq 1 ]; then
   done
   # 注意: gum 的 TUI 渲染在 stderr, 结果走 stdout — 不能重定向 stderr, 否则界面不可见
   # 注意: gum 2.x 的勾选/取消键是 x (空格无效); --ordered 保持注册表顺序输出
-  DF_PICKED_RAW="$("$DF_GUM" choose --no-limit --ordered \
+  # 注意: 条目是多行的 (树状), 输出必须用记录分隔符 \035 原子读取, 按行读会把树状子行
+  #       误当独立选择项喂给 df_pick_name, 然后被 set -e 无声击毙
+  DF_PICKED_RAW="$("$DF_GUM" choose --no-limit --ordered --output-delimiter $'\035' \
     --header "选择要安装的模块 (↑↓ 移动, x 勾选/取消, 回车确认) — 目标: ubuntu@22.04" \
     --selected-prefix "[✅] " --unselected-prefix "[  ] " \
     --selected.foreground 2 --item.foreground 7 \
@@ -280,8 +294,14 @@ if [ "$DF_TUI_SEL" -eq 1 ]; then
     info "未选择任何模块, 退出"
     exit 0
   fi
-  while IFS= read -r df_line; do
-    [ -n "$df_line" ] && DF_PICKED+=("$(df_pick_name "$df_line")")
+  while IFS= read -r -d $'\035' df_item || [ -n "$df_item" ]; do
+    [ -n "$df_item" ] || continue
+    if df_p="$(df_pick_name "$df_item")"; then
+      DF_PICKED+=("$df_p")
+    else
+      err "无法识别所选条目: $df_item"
+      exit 1
+    fi
   done <<<"$DF_PICKED_RAW"
   df_check_requires "${DF_PICKED[@]}"
   "$DF_GUM" confirm "安装 ${#DF_PICKED[@]} 个模块到 ubuntu@22.04?" || { info "已取消"; exit 0; }
@@ -300,7 +320,7 @@ done
 
 # ---- 汇总 -----------------------------------------------------------------
 if [ "$DF_TUI_PROG" -eq 1 ]; then
-  "$DF_GUM" style --border rounded --padding 0 1 --foreground 46 \
+  "$DF_GUM" style --border rounded --padding "0 1" --foreground 46 \
     "完成: ${#DF_PICKED[@]} 个模块   日志: $DF_LOG"
 else
   info "完成: ${#DF_PICKED[@]} 个模块 (日志: $DF_LOG)"
