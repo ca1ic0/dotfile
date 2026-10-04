@@ -189,18 +189,31 @@ df_step_embed() {  # $1=脚本临时路径 $2=展示名
 
 # ---- 模块注册表 (生成) ----------------------------------------------------
 DF_MODULES=(essentials git neovim starship)
-df_desc_essentials='常用 CLI 工具: htop/tree/curl/jq'
+df_desc_essentials='常用 CLI 工具'
 df_requires_essentials=''
 DF_SECTION_essentials='debian'
+df_item_essentials='essentials — 常用 CLI 工具
+     ├─ htop
+     ├─ tree
+     ├─ curl
+     └─ jq'
 df_desc_git='Git 版本控制'
 df_requires_git=''
 DF_SECTION_git='debian'
+df_item_git='git — Git 版本控制
+     └─ git'
 df_desc_neovim='Neovim 编辑器 + 常用依赖'
 df_requires_neovim=''
 DF_SECTION_neovim='debian'
+df_item_neovim='neovim — Neovim 编辑器 + 常用依赖
+     ├─ neovim
+     ├─ ripgrep
+     └─ fd-find'
 df_desc_starship='Starship 终端提示符 (官方脚本安装到 ~/.local/bin)'
 df_requires_starship=''
 DF_SECTION_starship='debian'
+df_item_starship='starship — Starship 终端提示符 (官方脚本安装到 ~/.local/bin)
+     └─ starship'
 cat > "$DF_TMPDIR/script-01.sh" <<'DOTFILE_EOF_1'
 #!/usr/bin/env bash
 # Starship 官方安装脚本, 装到用户目录 (无需 root)。
@@ -252,9 +265,9 @@ if [ "$DF_TUI_SEL" -eq 1 ]; then
   DF_ITEMS=()
   DF_DEFAULTS=""
   for df_n in "${DF_MODULES[@]}"; do
-    eval "df_d=\"\$df_desc_$df_n\""
-    DF_ITEMS+=("$df_n — $df_d")
-    DF_DEFAULTS="$DF_DEFAULTS,$df_n — $df_d"
+    eval "df_it=\"\$df_item_$df_n\""    # 多行条目: 首行模块名 + 树状内容 (整体一个选项)
+    DF_ITEMS+=("$df_it")
+    DF_DEFAULTS="$DF_DEFAULTS,$df_it"
   done
   # 注意: gum 的 TUI 渲染在 stderr, 结果走 stdout — 不能重定向 stderr, 否则界面不可见
   # 注意: gum 2.x 的勾选/取消键是 x (空格无效); --ordered 保持注册表顺序输出
