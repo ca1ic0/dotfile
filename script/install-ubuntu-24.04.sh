@@ -200,7 +200,7 @@ df_step_embed() {  # $1=脚本临时路径 $2=展示名
 }
 
 # ---- 模块注册表 (生成) ----------------------------------------------------
-DF_MODULES=(essentials git uv neovim docker starship hexo cuda-toolkit oneapi rocm)
+DF_MODULES=(essentials git uv neovim docker starship hexo cuda-toolkit oneapi rocm hermes)
 df_desc_essentials='常用 CLI 工具'
 df_requires_essentials=''
 DF_SECTION_essentials='debian'
@@ -266,6 +266,13 @@ df_item_rocm='rocm — AMD ROCm (HIP 运行时与编译器, 官方 repo.radeon.c
      ├─ rocm-hip-runtime → hip-runtime-amd / hsa-rocr / comgr / rocminfo
      ├─ hipcc + hip-dev → rocm-llvm (HIP 编译器与头文件)
      └─ /opt/rocm (PATH 经 /etc/profile.d/rocm.sh)'
+df_desc_hermes='Nous Research Hermes Agent (CLI/TUI/gateway, 官方安装器)'
+df_requires_hermes=''
+DF_SECTION_hermes='debian'
+df_item_hermes='hermes — Nous Research Hermes Agent (CLI/TUI/gateway, 官方安装器)
+     ├─ hermes 命令 (~/.local/bin)
+     ├─ 独立运行时: uv + Python 3.14 + Node.js + ripgrep + ffmpeg (~/.hermes)
+     └─ agent-browser + 固定 Chromium + cua-driver (默认; 可跳过)'
 cat > "$DF_TMPDIR/script-01.sh" <<'DOTFILE_EOF_1'
 #!/usr/bin/env bash
 # Astral uv 官方安装脚本, 装到 ~/.local/bin (无需 root)。
@@ -546,6 +553,22 @@ if ldd "$LLD" 2>/dev/null | grep -q 'not found'; then
 fi
 echo "rocm: 已补齐 lld 运行库 (libxml2.so.2 + libicu74), hipcc 链接可用"
 DOTFILE_EOF_8
+cat > "$DF_TMPDIR/script-09.sh" <<'DOTFILE_EOF_9'
+#!/usr/bin/env bash
+# Hermes Agent 官方安装器 (hermes-agent.nousresearch.com)。
+# 源码装到 ~/.hermes/hermes-agent, CLI 包装器放 ~/.local/bin/hermes;
+# 安装器自带固定版 uv/Python/Node/ripgrep/ffmpeg, 不与系统冲突。
+# 默认同时安装浏览器工具 (agent-browser + 固定 Chromium) 与 cua-driver;
+# 服务器/容器等无桌面环境可设 HERMES_SKIP_BROWSER=1 跳过这两件。
+set -euo pipefail
+
+args=""
+if [ "${HERMES_SKIP_BROWSER:-0}" = "1" ]; then
+  args="--skip-browser --skip-computer-use"
+fi
+# shellcheck disable=SC2086
+curl -fsSL https://hermes-agent.nousresearch.com/install.sh | bash -s -- $args
+DOTFILE_EOF_9
 df_mod_essentials() {
   df_step 'sudo apt-get install -y htop tree curl jq'
 }
@@ -589,6 +612,10 @@ df_mod_rocm() {
   df_step 'sudo apt-get install -y --no-install-recommends rocm-hip-runtime hipcc hip-dev'
   df_step_embed "$DF_TMPDIR/script-08.sh" './scripts/fix-lld-deps.sh'
   df_step 'echo '\''export PATH=/opt/rocm/bin:$PATH'\'' | sudo tee /etc/profile.d/rocm.sh >/dev/null'
+}
+df_mod_hermes() {
+  df_step 'sudo apt-get install -y curl git tar libatomic1'
+  df_step_embed "$DF_TMPDIR/script-09.sh" './scripts/install.sh'
 }
 
 
