@@ -123,6 +123,25 @@ uv run python -m unittest discover -s tests   # 本地单元测试 (含生成物
 tests/integration_remote.sh                   # 远程 docker 集成测试 (默认 ubuntu:24.04)
 ```
 
+## CI: 自动生成安装脚本
+
+`targets.toml` 声明构建目标清单, 每次 push 由 GitHub Actions
+(`.github/workflows/gen-scripts.yml`) 逐个执行 `gen --all`, 产物落在 `script/`,
+有变更则自动提交回仓库:
+
+```bash
+uv run python dotfile.py gen --all            # 本地等价操作, 输出到 script/
+```
+
+目标机上可以不 clone 本仓库, 直接取用 raw 链接:
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/ca1ic0/dotfile/main/script/install-ubuntu-24.04.sh | bash
+```
+
+给模块补了新发行版的 OS 段后, 把目标加进 `targets.toml` 即可纳入批量生成;
+清单里的目标无法被现有模块解析时, 生成会直接失败 (CI 变红即信号)。
+
 集成测试会把生成的脚本通过 ssh 管道送进远程服务器的全新容器真实执行一遍,
 并验证 `git`/`jq`/`nvim`/`starship` 装好。可用环境变量换目标:
 `REMOTE_HOST=... IMAGE=ubuntu:22.04 TARGET=ubuntu@22.04 tests/integration_remote.sh`。

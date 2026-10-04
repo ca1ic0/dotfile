@@ -1,0 +1,8 @@
+# CI 批量生成的目标清单 (gen --all / GitHub Actions 逐个生成到 script/)
+# 注意: 每个目标必须能被现有模块的 OS 段解析, 否则生成失败 (CI 变红即信号)。
+# 给模块补了新发行版的段之后, 把对应目标加进来。
+targets = [
+    "ubuntu@24.04",
+    "ubuntu@22.04",
+    "debian@12",
+]

@@ -1,0 +1,50 @@
+name: gen-install-scripts
+
+# 每次 commit (push) 都为 targets.toml 声明的全部目标重新生成安装脚本,
+# 有变更则提交回仓库 (script/ 目录), 供 raw.githubusercontent.com 直接取用。
+on:
+  push:
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: gen-install-scripts
+  cancel-in-progress: false
+
+jobs:
+  gen:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: astral-sh/setup-uv@v5
+
+      - name: 准备环境
+        run: uv sync
+
+      - name: 校验模块并为全部目标生成安装脚本
+        run: |
+          uv run python dotfile.py validate
+          uv run python dotfile.py gen --all
+
+      - name: 语法检查生成物
+        run: |
+          set -e
+          for f in script/install-*.sh; do
+            bash -n "$f"
+            echo "bash -n OK: $f"
+          done
+
+      - name: 提交回仓库
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add script/
+          if git diff --cached --quiet; then
+            echo "安装脚本无变更, 无需提交"
+            exit 0
+          fi
+          git commit -m "ci: 重新生成安装脚本 [skip ci]"
+          git push

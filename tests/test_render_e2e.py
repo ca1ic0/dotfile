@@ -87,6 +87,31 @@ class TestRenderE2E(unittest.TestCase):
         self.assertIn("没有适配", r.stderr)
         self.assertIn("查找链", r.stderr)
 
+    def test_cli_gen_all_targets(self):
+        # targets.toml 声明的每个目标各生成一份, 文件名以 install-<id>-<ver>.sh 落盘
+        with tempfile.TemporaryDirectory() as d:
+            r = subprocess.run(
+                [sys.executable, "dotfile.py", "gen", "--all", "-d", d],
+                capture_output=True, text=True, cwd=REPO,
+            )
+            self.assertEqual(r.returncode, 0, r.stderr)
+            names = sorted(p.name for p in Path(d).glob("*.sh"))
+            self.assertEqual(
+                names,
+                ["install-debian-12.sh", "install-ubuntu-22.04.sh", "install-ubuntu-24.04.sh"],
+            )
+            for p in Path(d).glob("*.sh"):
+                syntax = subprocess.run(["bash", "-n", str(p)], capture_output=True, text=True)
+                self.assertEqual(syntax.returncode, 0, f"{p}: {syntax.stderr}")
+
+    def test_cli_gen_all_and_target_conflict(self):
+        r = subprocess.run(
+            [sys.executable, "dotfile.py", "gen", "--all", "--target", "arch"],
+            capture_output=True, text=True, cwd=REPO,
+        )
+        self.assertEqual(r.returncode, 2)
+        self.assertIn("互斥", r.stderr)
+
 
 if __name__ == "__main__":
     unittest.main()

@@ -16,6 +16,7 @@ import os
 import subprocess
 import sys
 import tempfile
+import tomllib
 from pathlib import Path
 
 REPO_ROOT = Path(__file__).resolve().parent
@@ -61,7 +62,38 @@ def _gen_command(argv: list[str]) -> str:
     return "./dotfile.py " + " ".join(argv)
 
 
+def _load_ci_targets() -> list[str]:
+    path = REPO_ROOT / "targets.toml"
+    try:
+        data = tomllib.loads(path.read_text(encoding="utf-8"))
+    except FileNotFoundError:
+        raise ValueError(f"缺少 {path}")
+    targets = data.get("targets")
+    if not isinstance(targets, list) or not targets or not all(
+        isinstance(t, str) and t.strip() for t in targets
+    ):
+        raise ValueError(f"{path} 需要非空字符串数组字段 targets")
+    return [t.strip() for t in targets]
+
+
 def cmd_gen(args, argv: list[str]) -> int:
+    if args.all:
+        if args.target:
+            print("错误: --all 与 --target 互斥", file=sys.stderr)
+            return 2
+        out_dir = Path(args.dir)
+        out_dir.mkdir(parents=True, exist_ok=True)
+        for spec in _load_ci_targets():
+            args.target = spec
+            p = _build_plan(args)
+            text = render.render(p, gen_command=_gen_command(argv))
+            name = f"install-{str(p.target).replace('@', '-')}.sh"
+            out = out_dir / name
+            out.write_text(text, encoding="utf-8")
+            out.chmod(0o755)
+            print(f"已生成: {out} ({len(p.modules)} 个模块)")
+        return 0
+
     p = _build_plan(args)
     text = render.render(p, gen_command=_gen_command(argv))
     if args.output:
@@ -139,8 +171,12 @@ def main(argv: list[str] | None = None) -> int:
     sub = parser.add_subparsers(dest="command", required=True)
 
     p_gen = sub.add_parser("gen", help="生成自包含安装脚本")
-    p_gen.add_argument("--target", "-t", required=True, metavar="ID[@VER]",
-                       help="如 rocky@8 / ubuntu@22.04 / arch")
+    p_gen.add_argument("--target", "-t", default=None, metavar="ID[@VER]",
+                       help="如 rocky@8 / ubuntu@22.04 / arch (与 --all 二选一)")
+    p_gen.add_argument("--all", action="store_true",
+                       help="为 targets.toml 声明的全部目标各生成一份 (CI 批量模式)")
+    p_gen.add_argument("--dir", "-d", default="script",
+                       help="--all 模式的输出目录, 缺省 script/")
     _add_selection_args(p_gen)
     p_gen.add_argument("--output", "-o", default=None, help="输出文件 (缺省打印到 stdout)")
     p_gen.set_defaults(fn=cmd_gen)
@@ -167,7 +203,7 @@ def main(argv: list[str] | None = None) -> int:
     args = parser.parse_args(argv)
     try:
         return args.fn(args, argv)
-    except (distro.TargetError, manifest.ManifestError, plan_mod.PlanError) as e:
+    except (distro.TargetError, manifest.ManifestError, plan_mod.PlanError, ValueError) as e:
         print(f"错误: {e}", file=sys.stderr)
         return 1
 
