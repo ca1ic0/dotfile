@@ -256,9 +256,10 @@ if [ "$DF_TUI_SEL" -eq 1 ]; then
     DF_ITEMS+=("$df_n — $df_d")
     DF_DEFAULTS="$DF_DEFAULTS,$df_n — $df_d"
   done
+  # 注意: gum 的 TUI 渲染在 stderr, 结果走 stdout — 不能重定向 stderr, 否则界面不可见
   DF_PICKED_RAW="$("$DF_GUM" choose --no-limit \
     --header "选择要安装的模块 (空格勾选, 回车确认) — 目标: ubuntu@26.04" \
-    --selected "${DF_DEFAULTS#,}" "${DF_ITEMS[@]}" 2>/dev/null || true)"
+    --selected "${DF_DEFAULTS#,}" "${DF_ITEMS[@]}" || true)"
   if [ -z "$DF_PICKED_RAW" ]; then
     info "未选择任何模块, 退出"
     exit 0
