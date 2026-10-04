@@ -106,6 +106,10 @@ class TestRenderE2E(unittest.TestCase):
 
     def test_cli_gen_all_targets(self):
         # targets.toml 声明的每个目标各生成一份, 文件名以 install-<id>-<ver>.sh 落盘
+        import tomllib
+
+        specs = tomllib.loads((REPO / "targets.toml").read_text(encoding="utf-8"))["targets"]
+        expected = sorted(f"install-{s.replace('@', '-')}.sh" for s in specs)
         with tempfile.TemporaryDirectory() as d:
             r = subprocess.run(
                 [sys.executable, "dotfile.py", "gen", "--all", "-d", d],
@@ -113,10 +117,7 @@ class TestRenderE2E(unittest.TestCase):
             )
             self.assertEqual(r.returncode, 0, r.stderr)
             names = sorted(p.name for p in Path(d).glob("*.sh"))
-            self.assertEqual(
-                names,
-                ["install-debian-12.sh", "install-ubuntu-22.04.sh", "install-ubuntu-24.04.sh"],
-            )
+            self.assertEqual(names, expected)
             for p in Path(d).glob("*.sh"):
                 syntax = subprocess.run(["bash", "-n", str(p)], capture_output=True, text=True)
                 self.assertEqual(syntax.returncode, 0, f"{p}: {syntax.stderr}")
