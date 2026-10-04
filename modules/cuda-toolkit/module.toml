@@ -1,0 +1,14 @@
+[module]
+name = "cuda-toolkit"
+description = "NVIDIA CUDA Toolkit"
+groups = ["gpu"]
+order = 40
+requires = []
+content = ["cuda-toolkit-13 (nvcc + 开发库 + 工具, 不含 GPU 驱动)", "cuda-keyring (NVIDIA CUDA 网络源)"]
+
+[debian]
+install = [
+    "sudo apt-get install -y curl",           # 基础镜像常无 curl, 拉取 keyring 包需要
+    "./scripts/setup-nvidia-repo.sh",         # 装 cuda-keyring (源+密钥+pin) 并 apt-get update
+    "sudo apt-get install -y cuda-toolkit-13", # 跟随 CUDA 13 最新点版本, 只装 toolkit 不装驱动
+]

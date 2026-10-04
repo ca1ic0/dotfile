@@ -165,7 +165,7 @@ fi
 # ---- 执行原语 -------------------------------------------------------------
 df_module_header() {{  # $1=模块名 $2=配方段
   local d=""
-  eval "d=\"\\$df_desc_$1\""
+  eval "d=\"\\$df_desc_${{1//-/_}}\""   # bash 变量名不允许 '-', 模块名含 - 时映射为 _
   if [ "$DF_TUI_PROG" -eq 1 ]; then
     "$DF_GUM" style --bold --foreground 51 "── $1 · $d"
   else
@@ -234,7 +234,7 @@ df_pick_name() {  # "name — desc" -> name
 df_check_requires() {  # 参数: 已选模块名列表
   local df_sel=" $* " df_n df_deps df_dep
   for df_n in "$@"; do
-    eval "df_deps=\"\$df_requires_$df_n\""
+    eval "df_deps=\"\$df_requires_${df_n//-/_}\""
     for df_dep in $df_deps; do
       case "$df_sel" in
         *" $df_dep "*) ;;
@@ -249,7 +249,7 @@ if [ "$DF_TUI_SEL" -eq 1 ]; then
   DF_ITEMS=()
   DF_DEFAULTS=""
   for df_n in "${DF_MODULES[@]}"; do
-    eval "df_it=\"\$df_item_$df_n\""    # 多行条目: 首行模块名 + 树状内容 (整体一个选项)
+    eval "df_it=\"\$df_item_${df_n//-/_}\""    # 多行条目: 首行模块名 + 树状内容 (整体一个选项)
     DF_ITEMS+=("$df_it")
     DF_DEFAULTS="$DF_DEFAULTS,$df_it"
   done
@@ -287,9 +287,9 @@ _RUN_TAIL = r'''
 # ---- 安装 -----------------------------------------------------------------
 for df_m in "${DF_PICKED[@]}"; do
   export DOTFILES_MODULE="$df_m"
-  eval "df_sec=\"\$DF_SECTION_$df_m\""
+  eval "df_sec=\"\$DF_SECTION_${df_m//-/_}\""
   df_module_header "$df_m" "$df_sec"
-  "df_mod_$df_m"
+  "df_mod_${df_m//-/_}"
 done
 
 # ---- 汇总 -----------------------------------------------------------------
@@ -305,6 +305,11 @@ fi
 def shq(s: str) -> str:
     """单引号包裹, 用于嵌入 df_step 参数。"""
     return "'" + s.replace("'", "'\\''") + "'"
+
+
+def _var(name: str) -> str:
+    """模块名 -> bash 标识符后缀: bash 变量名不允许 '-', 统一映射为 '_'。"""
+    return name.replace("-", "_")
 
 
 def _item_text(name: str, desc: str, content: list[str]) -> str:
@@ -336,11 +341,12 @@ def render(plan: Plan, gen_command: str = "./dotfile.py gen ...") -> str:
     parts.append(f"DF_MODULES=({' '.join(names)})\n")
     for p in plan.modules:
         m = p.module
-        parts.append(f"df_desc_{m.name}={shq(m.description)}\n")
-        parts.append(f"df_requires_{m.name}={shq(' '.join(m.requires))}\n")
-        parts.append(f"DF_SECTION_{m.name}={shq(str(p.section))}\n")
+        v = _var(m.name)
+        parts.append(f"df_desc_{v}={shq(m.description)}\n")
+        parts.append(f"df_requires_{v}={shq(' '.join(m.requires))}\n")
+        parts.append(f"DF_SECTION_{v}={shq(str(p.section))}\n")
         parts.append(
-            f"df_item_{m.name}={shq(_item_text(m.name, m.description, m.content))}\n"
+            f"df_item_{v}={shq(_item_text(m.name, m.description, m.content))}\n"
         )
 
     # 嵌入脚本 (先落到临时目录)
@@ -362,7 +368,7 @@ def render(plan: Plan, gen_command: str = "./dotfile.py gen ...") -> str:
                 embeds.append(delim)
                 steps.append(f'  df_step_embed "$DF_TMPDIR/{tmp_rel}" {shq(step.script_ref)}')
         body = "\n".join(steps)
-        funcs.append(f"df_mod_{m.name}() {{\n{body}\n}}\n")
+        funcs.append(f"df_mod_{_var(m.name)}() {{\n{body}\n}}\n")
 
     parts.extend(e + "\n" for e in embeds)
     parts.extend(funcs)

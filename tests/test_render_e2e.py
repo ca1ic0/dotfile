@@ -31,10 +31,12 @@ class TestRenderE2E(unittest.TestCase):
         )
 
     def test_all_groups_order(self):
-        self.assertEqual(
-            [pm.module.name for pm in self.plan_all.modules],
-            ["essentials", "git", "neovim", "starship"],
-        )
+        # 覆盖仓库全部模块, 且按 (order, name) 排序 (仓库模块当前无 requires)
+        all_names = {m.name for m in manifest.load_all(REPO / "modules")}
+        names = [pm.module.name for pm in self.plan_all.modules]
+        self.assertEqual(set(names), all_names)
+        keys = [(pm.module.order, pm.module.name) for pm in self.plan_all.modules]
+        self.assertEqual(keys, sorted(keys))
 
     def test_header_embeds_target(self):
         self.assertIn('EXPECTED_ID="ubuntu"', self.script_all)
@@ -58,7 +60,10 @@ class TestRenderE2E(unittest.TestCase):
         self.assertIn('--selected-prefix "[✅] "', self.script_all)
         self.assertIn('"$DF_GUM" confirm', self.script_all)
         self.assertIn('"$DF_GUM" spin --spinner dot', self.script_all)
-        self.assertIn("DF_MODULES=(essentials git neovim starship)", self.script_all)
+        expected_registry = "DF_MODULES=(" + " ".join(
+            pm.module.name for pm in self.plan_all.modules
+        ) + ")"
+        self.assertIn(expected_registry, self.script_all)
         self.assertIn("df_mod_starship()", self.script_all)
         self.assertIn("df_requires_essentials=''", self.script_all)
         self.assertIn("df_check_requires", self.script_all)
@@ -66,12 +71,31 @@ class TestRenderE2E(unittest.TestCase):
         self.assertIn("df_item_essentials=", self.script_all)
         self.assertIn("     ├─ htop", self.script_all)
         self.assertIn("     └─ jq", self.script_all)
-        self.assertIn('eval "df_it=\\"\\$df_item_$df_n\\""', self.script_all)
+        self.assertIn('eval "df_it=\\"\\$df_item_${df_n//-/_}\\""', self.script_all)
         # 降级模式与跳过选择
         self.assertIn("--no-tui)", self.script_all)
         self.assertIn("--yes|-y)", self.script_all)
         # 非 TTY 时安装全部模块
         self.assertIn('DF_PICKED=("${DF_MODULES[@]}")', self.script_all)
+
+    def test_registry_assignments_executable(self):
+        # 回归: 模块名含 '-' (如 cuda-toolkit) 时, 注册表变量名必须映射为 '_',
+        # 否则 bash 会把 df_desc_xxx-toolkit=... 当作命令执行 (127)
+        import re
+
+        first_lines = [ln for ln in self.script_all.splitlines()
+                       if re.match(r"^(df_desc_|df_requires_|df_item_|DF_SECTION_)", ln)]
+        self.assertGreater(len(first_lines), 4)
+        for ln in first_lines:
+            self.assertNotIn("-", ln.split("=", 1)[0], f"变量名含 '-': {ln}")
+        # df_item 是多行赋值, 只执行单行安全的注册表变量
+        exec_lines = [ln for ln in first_lines if not ln.startswith("df_item_")]
+        r = subprocess.run(
+            ["bash", "-c", "\n".join(exec_lines) + "\necho REGISTRY_OK"],
+            capture_output=True, text=True,
+        )
+        self.assertEqual(r.returncode, 0, r.stderr)
+        self.assertIn("REGISTRY_OK", r.stdout)
 
     def test_no_symlink_and_delim_unique(self):
         self.assertNotIn("ln -s", self.script_all)

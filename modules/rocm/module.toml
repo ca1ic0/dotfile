@@ -1,0 +1,21 @@
+[module]
+name = "rocm"
+description = "AMD ROCm (HIP 运行时与编译器, 官方 repo.radeon.com 源)"
+groups = ["gpu"]
+order = 42
+requires = []
+content = [
+    "rocm-hip-runtime → hip-runtime-amd / hsa-rocr / comgr / rocminfo",
+    "hipcc + hip-dev → rocm-llvm (HIP 编译器与头文件)",
+    "/opt/rocm (PATH 经 /etc/profile.d/rocm.sh)",
+]
+
+[debian]
+install = [
+    "sudo apt-get install -y curl ca-certificates",                    # 拉取仓库密钥需要
+    "./scripts/setup-rocm-repo.sh",                                    # 密钥 + apt 源 + origin 优先级 pin
+    "sudo apt-get update",
+    "sudo apt-get install -y --no-install-recommends rocm-hip-runtime hipcc hip-dev",
+    "./scripts/fix-lld-deps.sh",                                       # noble 回落环境的 lld 缺库垫片 (可选)
+    "echo 'export PATH=/opt/rocm/bin:$PATH' | sudo tee /etc/profile.d/rocm.sh >/dev/null",
+]

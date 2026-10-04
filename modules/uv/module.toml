@@ -1,0 +1,13 @@
+[module]
+name = "uv"
+description = "Astral uv — 极快的 Python 包/项目管理器"
+groups = ["dev"]
+order = 15
+requires = []
+content = ["uv"]
+
+[debian]
+install = [
+  "sudo apt-get install -y curl ca-certificates",
+  "./scripts/install.sh",
+]

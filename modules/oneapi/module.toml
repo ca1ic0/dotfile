@@ -1,0 +1,17 @@
+[module]
+name = "oneapi"
+description = "Intel oneAPI 工具链 (DPC++/icx)"
+groups = ["gpu"]
+order = 41
+requires = []
+content = [
+    "oneAPI apt 源 (apt.repos.intel.com/oneapi, GPG keyring + signed-by)",
+    "intel-oneapi-compiler-dpcpp-cpp -> icx / icpx / DPC++ (2026.x, 约 1 GiB 下载)",
+]
+
+[debian]
+install = [
+    "sudo apt-get install -y curl gnupg",
+    "./scripts/setup-intel-repo.sh",
+    "sudo apt-get install -y intel-oneapi-compiler-dpcpp-cpp",
+]
