@@ -1,0 +1,8 @@
+[module]
+name = "neovim"
+description = "Neovim 编辑器 + 常用依赖"
+groups = ["dev"]
+order = 20
+
+[debian]
+install = "sudo apt-get install -y neovim ripgrep fd-find curl"

@@ -1,0 +1,6 @@
+.venv/
+__pycache__/
+*.pyc
+.zcode/
+install-*.sh
+!tests/fixtures/*.sh

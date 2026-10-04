@@ -1,0 +1,8 @@
+[module]
+name = "essentials"
+description = "常用 CLI 工具: htop/tree/curl/jq"
+groups = ["base"]
+order = 10
+
+[debian]
+install = "sudo apt-get install -y htop tree curl jq"

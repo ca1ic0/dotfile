@@ -1,0 +1,8 @@
+[module]
+name = "git"
+description = "Git 版本控制"
+groups = ["base"]
+order = 10
+
+[debian]
+install = "sudo apt-get install -y git"

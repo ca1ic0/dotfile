@@ -1,0 +1,9 @@
+[project]
+name = "dotfile"
+version = "0.1.0"
+description = "声明式多发行版软件安装脚本生成器"
+requires-python = ">=3.11"
+dependencies = []
+
+[tool.uv]
+package = false
