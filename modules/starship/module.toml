@@ -7,3 +7,10 @@ content = ["starship"]
 
 [debian]
 install = ["sudo apt-get install -y curl", "./scripts/install.sh"]
+
+# 与 [debian] 段语义对齐 (纯 curl 模块, 官方安装器静态二进制与发行版无关):
+# 唯一发行版差异是前置包命令 apt-get → dnf — curl 在 Fedora 44 档案库同名直收
+# (repoquery fc44 已核实, 不涉第三方源); 安装落点与结尾验证均在本模块
+# scripts/install.sh 内以绝对路径 $HOME/.local/bin/starship 完成。
+[fedora]
+install = ["sudo dnf install -y curl", "./scripts/install.sh"]

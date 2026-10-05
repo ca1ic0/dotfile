@@ -8,3 +8,8 @@ content = ["hexo-cli (npm -g, 经 nvm 的 node)"]
 
 [debian]
 install = ["./scripts/install-hexo.sh"]
+
+# hexo-cli 是纯 npm 包, Fedora 44 档案库未收录 (repoquery 无果), 维持 npm -g 通道;
+# node 来自 nodejs 模块的 nvm, 本模块无 dnf 前置包 — 段同 debian, 脚本与发行版无关。
+[fedora]
+install = ["./scripts/install-hexo.sh"]

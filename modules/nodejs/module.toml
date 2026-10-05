@@ -11,3 +11,15 @@ install = [
   "sudo apt-get install -y curl ca-certificates libatomic1",
   "./scripts/install-nvm.sh",
 ]
+
+[fedora]
+# 与 [debian] 段语义对齐: 同样的三前置包 + 同一个 nvm 安装脚本。三包全在
+# Fedora 44 档案库 (repoquery fc44 核实), dnf 直装, 无厂商源、无 --nogpgcheck 场景。
+# libatomic1 在 Fedora 叫 libatomic, 且并非徒劳对齐 — node 官方二进制实测链接
+# libatomic.so.1 (ldd: libatomic.so.1 => /lib64/libatomic.so.1), 缺它 node 起不来;
+# 安装与验证 (node/npm --version, 落点 ~/.nvm/versions/node/<版本>/bin/, 非
+# /usr/bin) 都在 scripts/install-nvm.sh 内置, 与发行版无关, 故段形状同 debian。
+install = [
+  "sudo dnf install -y curl ca-certificates libatomic",
+  "./scripts/install-nvm.sh",
+]

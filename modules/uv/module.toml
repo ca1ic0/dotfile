@@ -11,3 +11,14 @@ install = [
   "sudo apt-get install -y curl ca-certificates",
   "./scripts/install.sh",
 ]
+
+[fedora]
+# 与 [debian] 段语义对齐 (纯 curl 模块): 前置包 curl/ca-certificates 在 Fedora 44
+# 档案库同名存在 (repoquery fc44 已核实), 唯一差异 apt-get → dnf, 无厂商源。
+# uv 本体仍走官方安装器 (scripts/install.sh, 落 ~/.local/bin, 免 root, 含 uvx):
+# 取舍 — Fedora 44 档案库虽已收录 uv 0.12.19 (updates, repoquery 核实), 但为与
+# debian 同一通道、跟随上游最新版, 保持上游推荐的 standalone installer。
+install = [
+  "sudo dnf install -y curl ca-certificates",
+  "./scripts/install.sh",
+]

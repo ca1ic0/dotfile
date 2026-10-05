@@ -1,11 +1,11 @@
 [module]
 name = "oneapi"
-description = "Intel oneAPI 工具链 (DPC++/icx; 官方 apt 仓 — 上游无单组件离线形式, 离线全家桶数 GB, 按约定退回仓库形式)"
+description = "Intel oneAPI 工具链 (DPC++/icx; 官方 apt/yum 仓 — 上游无单组件离线形式, 离线全家桶数 GB, 按约定退回仓库形式)"
 groups = ["gpu"]
 order = 41
 requires = []
 content = [
-    "oneAPI apt 源 (apt.repos.intel.com/oneapi, GPG keyring + signed-by)",
+    "oneAPI 官方源 (apt: keyring+signed-by 常驻 / dnf: repofrompath 一次性)",
     "intel-oneapi-compiler-dpcpp-cpp -> icx / icpx / DPC++ (2026.x, 约 1 GiB 下载)",
 ]
 
@@ -14,4 +14,22 @@ install = [
     "sudo apt-get install -y curl gnupg",
     "./scripts/setup-intel-repo.sh",
     "sudo apt-get install -y intel-oneapi-compiler-dpcpp-cpp",
+]
+
+[fedora]
+# Fedora 44 档案库无 oneAPI (repoquery "intel-oneapi*" 为空) — 与 debian 同理走 Intel 官方
+# yum 仓 (https://yum.repos.intel.com/oneapi, 与 apt 仓同款包名), 但按离线优先原则
+# 不落 /etc/yum.repos.d 不留注册: dnf --repofrompath 临时源一次性安装。
+# GPG 不用 --nogpgcheck: 先 rpm --import 官方公钥落 rpmdb keyring (对应 debian 段的
+# keyring 语义; 取舍: 公钥留存本机), --setopt=intel-oneapi.gpgcheck=1 全程签名校验,
+# key 在 rpmdb 中即无交互 (fedora:44 dnf5 5.4.3.0 实测通过)。
+# 前置包比 debian 段省: dnf 自身直连 https、rpm --import 直吃 URL, 不需要 curl/gnupg;
+# libatomic (Fedora 命名, 非 libatomic1)/gcc-c++/make 由 RPM requires 自动从 Fedora
+# updates 拉齐 (实测 41+5 包事务), 无需显式列出。
+install = [
+    "sudo rpm --import https://yum.repos.intel.com/intel-gpg-keys/GPG-PUB-KEY-INTEL-SW-PRODUCTS.PUB",
+    "sudo dnf install -y --repofrompath=intel-oneapi,https://yum.repos.intel.com/oneapi --setopt=intel-oneapi.gpgcheck=1 intel-oneapi-compiler-dpcpp-cpp",
+    # oneAPI 不落 /usr/bin (实测无任何入口), 验证只能用 /opt 绝对路径; latest 符号链接由包提供
+    "/opt/intel/oneapi/compiler/latest/bin/icx --version | head -1",
+    "/opt/intel/oneapi/compiler/latest/bin/icpx --version | head -1",
 ]

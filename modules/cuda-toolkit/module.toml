@@ -1,10 +1,10 @@
 [module]
 name = "cuda-toolkit"
-description = "NVIDIA CUDA Toolkit (Ubuntu 档案库官方包; 26.04 为 cuda-toolkit 13.x 元包, 旧目标为 nvidia-cuda-toolkit)"
+description = "NVIDIA CUDA Toolkit (Ubuntu 档案库官方包; 26.04 为 cuda-toolkit 13.x 元包, 旧目标为 nvidia-cuda-toolkit; Fedora 走 NVIDIA 官方源临时仓库)"
 groups = ["gpu"]
 order = 40
 requires = ["buildenv"]
-content = ["cuda-toolkit 元包 (26.04, 跟随最新 13.x)", "nvidia-cuda-toolkit (24.04/22.04/debian12)", "nvcc + 开发库 + 工具, 不含 GPU 驱动"]
+content = ["cuda-toolkit 元包 (26.04, 跟随最新 13.x)", "nvidia-cuda-toolkit (24.04/22.04/debian12)", "cuda-toolkit 元包 (fedora, NVIDIA 官方源临时仓库)", "nvcc + 开发库 + 工具, 不含 GPU 驱动"]
 
 ["ubuntu@26.04"]
 install = [
@@ -16,4 +16,16 @@ install = [
 install = [
   "sudo apt-get install -y nvidia-cuda-toolkit",
   "nvcc --version | tail -2",
+]
+
+[fedora]
+# Fedora 44 档案库不收录 CUDA (repoquery 无 cuda-toolkit/nvidia-cuda-toolkit), 按离线优先
+# 走 NVIDIA 官方 fedora44 源一次性安装: --repofrompath 临时仓库, 不落 /etc/yum.repos.d、
+# 不留长期注册。GPG 不用 --nogpgcheck, 先 rpmkeys --import 把 NVIDIA 公钥落 rpm keyring。
+# cuda-toolkit 元包 = nvcc + 开发库 + 工具, 不含 GPU 驱动 (驱动在单独的 cuda 元包), 与 [debian] 语义一致;
+# 落点 /usr/local/cuda-13.x, 经 alternatives 提供稳定的 /usr/local/cuda 软链。
+install = [
+  "sudo rpmkeys --import https://developer.download.nvidia.com/compute/cuda/repos/fedora44/x86_64/73CD9B30.pub",
+  "sudo dnf install -y --repofrompath cuda-fedora44,https://developer.download.nvidia.com/compute/cuda/repos/fedora44/x86_64 cuda-toolkit",
+  "/usr/local/cuda/bin/nvcc --version | tail -2",
 ]

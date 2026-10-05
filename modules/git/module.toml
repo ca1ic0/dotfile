@@ -10,3 +10,10 @@ install = [
   "sudo apt-get install -y git",
   "git --version",
 ]
+
+# Fedora 44 档案库自带 git (repoquery 实证 git-2.55.0-1.fc44), 无需厂商源
+[fedora]
+install = [
+  "sudo dnf install -y git",
+  "git --version",
+]

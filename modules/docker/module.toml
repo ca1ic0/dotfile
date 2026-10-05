@@ -1,6 +1,6 @@
 [module]
 name = "docker"
-description = "Docker Engine (官方 .deb 离线安装, 不注册第三方源)"
+description = "Docker Engine (官方离线包一次性安装, 不注册第三方源)"
 groups = ["dev"]
 order = 25
 requires = []
@@ -10,4 +10,26 @@ content = ["docker-ce", "docker-ce-cli", "containerd.io", "docker-buildx-plugin"
 install = [
   "sudo apt-get install -y curl ca-certificates",
   "./scripts/install-docker-debs.sh",
+]
+
+# 与 [debian] 语义对齐: 同样五件套, 走 download.docker.com 官方渠道。
+# Fedora 档案库没有 docker-ce (repoquery 无结果, 只有 moby-engine/podman-docker 等
+# 替代品, 属不同产品), 故用 --repofrompath 临时仓库一次性安装 — dnf 侧的「离线优先」:
+# 不落 /etc/yum.repos.d, 不留注册 (fedora:44 容器实测装后 repolist / repos.d 干净)。
+# dnf5 不替换 --repofrompath URL 里的 $releasever (实测得 .../fedora//x86_64 404),
+# 版本号改在 bash 侧用 $(rpm -E %fedora) 展开。
+# GPG: 先 rpm --import 官方签名 key 落 keyring (指纹 060A 61C5 1B55 8A7F 742B
+# 77AA C52F EB6B 621E 9F35), 安装走默认 gpgcheck 实校验, 免交互、无需 --nogpgcheck;
+# 代价仅 rpmdb 多一把厂商 key, 换包签名始终受验。
+# 依赖由 Fedora 官方库解析, 与 debian 侧 apt 解依赖一致; containerd.io 自带
+# Obsoletes: containerd/runc, 会置换档案库同名包 (冲突时 dnf 明确报错, 不强删)。
+[fedora]
+install = [
+  "sudo rpm --import https://download.docker.com/linux/fedora/gpg",
+  "sudo dnf install -y --repofrompath docker-ce,https://download.docker.com/linux/fedora/$(rpm -E %fedora)/x86_64/stable docker-ce docker-ce-cli containerd.io docker-buildx-plugin docker-compose-plugin",
+  "docker --version",
+  "containerd --version",
+  "runc --version",
+  "docker buildx version",
+  "docker compose version",
 ]

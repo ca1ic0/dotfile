@@ -1,6 +1,6 @@
 [module]
 name = "rocm"
-description = "AMD ROCm (Ubuntu 档案库官方包; 26.04 为 rocm 7.1 元包, 旧目标为 hipcc/rocminfo 5.7 组件)"
+description = "AMD ROCm (Ubuntu/Fedora 档案库官方包; 26.04 为 rocm 7.1 元包, 旧目标为 hipcc/rocminfo 5.7 组件)"
 groups = ["gpu"]
 order = 42
 requires = []
@@ -15,5 +15,19 @@ install = [
 [debian]
 install = [
   "sudo apt-get install -y --no-install-recommends hipcc rocminfo rocm-smi",
+  "hipcc --version | head -3",
+]
+
+[fedora]
+install = [
+  # 三组件 Fedora 44 档案库官方直收, 包名与 Debian 一致 (repoquery fc44 核实:
+  # hipcc 20-13.rocm7.1.1 / rocminfo 7.1.0-4 / rocm-smi 7.1.1-3, 与 ubuntu@26.04
+  # 的 rocm 7.1 同版本族), 无需厂商源, 无 --nogpgcheck 取舍。
+  # 依赖闭包 dnf 自解 (fedora:44 容器实装 122 包一次通过); 不需要 libatomic
+  # (rpm -q --whatrequires libatomic 为空)。二进制直接落 /usr/bin (repoquery
+  # --list 核实), 非 Debian 的 rocm/bin 布局, 验证行照搬 debian 段;
+  # rocm-smi/rocminfo 无 GPU 报错属预期, 故只验证 hipcc (同 debian)。
+  # 要完整 ROCm 栈可另装元包 rocm (7.1.0, 同 ubuntu@26.04 分支)。
+  "sudo dnf install -y hipcc rocminfo rocm-smi",
   "hipcc --version | head -3",
 ]

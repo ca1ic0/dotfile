@@ -13,3 +13,13 @@ install = [
   "rg --version | head -1",
   "fd --version | head -1",
 ]
+
+[fedora]
+install = [
+  # 四包全在 Fedora 44 档案库 (repoquery 核实), 无需厂商源;
+  # fd-find 直接装出 /usr/bin/fd (repoquery --list 核实), 与 Debian 不同, 无需 fdfind 兼容链接
+  "sudo dnf install -y neovim ripgrep fd-find curl",
+  "nvim --version | head -1",
+  "rg --version | head -1",
+  "fd --version | head -1",
+]

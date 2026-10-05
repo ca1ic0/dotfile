@@ -24,3 +24,22 @@ install = [
   ". $HOME/.nvm/nvm.sh && nvm use --silent default && opencode --version | head -1",
   "$HOME/.agentharness/hermes/bin/hermes --version | head -1",
 ]
+
+[fedora]
+# 与 [debian] 段语义对齐 (纯 curl/npm 模块, 六个 CLI 同批次同布局): 五个 CLI
+# 仍走 nvm npm 全局安装, hermes 仍走官方安装器收在 ~/.agentharness/hermes;
+# 唯一发行版差异是前置包命令 apt-get → dnf (curl/ca-certificates 在 Fedora 44
+# 档案库同名存在, 已 repoquery 核实, 不涉第三方源)。
+install = [
+  ". $HOME/.nvm/nvm.sh && nvm use --silent default && npm install -g @anthropic-ai/claude-code @minimax-ai/code zcode-cli opencode-ai",
+  ". $HOME/.nvm/nvm.sh && nvm use --silent default && npm install -g --ignore-scripts @earendil-works/pi-coding-agent",
+  "sudo dnf install -y curl ca-certificates && curl -fsSL https://hermes-agent.nousresearch.com/install.sh | HERMES_HOME=$HOME/.agentharness/hermes bash",
+  "mkdir -p $HOME/.agentharness/hermes/bin && mv $HOME/.local/bin/hermes $HOME/.agentharness/hermes/bin/hermes",
+  "$HOME/.agentharness/hermes/bin/hermes pm repair",
+  ". $HOME/.nvm/nvm.sh && nvm use --silent default && claude --version | head -1",
+  ". $HOME/.nvm/nvm.sh && nvm use --silent default && pi --version | head -1",
+  ". $HOME/.nvm/nvm.sh && nvm use --silent default && mcode --version | head -1",
+  ". $HOME/.nvm/nvm.sh && nvm use --silent default && zcode-cli --version | head -1",
+  ". $HOME/.nvm/nvm.sh && nvm use --silent default && opencode --version | head -1",
+  "$HOME/.agentharness/hermes/bin/hermes --version | head -1",
+]
