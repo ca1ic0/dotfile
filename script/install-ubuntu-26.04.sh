@@ -142,7 +142,10 @@ DF_TUI_SEL=0
 if [ -n "$DF_GUM" ] && [ "$DF_NO_TUI" -eq 0 ] && [ "$DF_DRY_RUN" -eq 0 ] && [ -t 1 ]; then
   DF_TUI_PROG=1
 fi
-if [ "$DF_TUI_PROG" -eq 1 ] && [ "$DF_ASSUME_YES" -eq 0 ] && [ -t 0 ]; then
+# 交互判定看 /dev/tty 而非 stdin: curl|bash 时 stdin 是管道, 但用户终端仍在
+# /dev/tty 上 — 选择界面照常弹出, 键盘输入经 /dev/tty 读取 (CI 等无终端环境
+# /dev/tty 不可读, 自动回落为装全部)。
+if [ "$DF_TUI_PROG" -eq 1 ] && [ "$DF_ASSUME_YES" -eq 0 ] && [ -r /dev/tty ]; then
   DF_TUI_SEL=1
 fi
 
@@ -605,11 +608,13 @@ if [ "$DF_TUI_SEL" -eq 1 ]; then
   # 注意: gum 2.x 的勾选/取消键是 x (空格无效); --ordered 保持注册表顺序输出
   # 注意: 条目是多行的 (树状), 输出必须用记录分隔符 \035 原子读取, 按行读会把树状子行
   #       误当独立选择项喂给 df_pick_name, 然后被 set -e 无声击毙
+  # 注意: 键盘输入从 /dev/tty 读而非 stdin — curl|bash 时 stdin 是管道 (里面还躺着
+  #       脚本剩余内容, gum 误读会吃掉脚本), /dev/tty 才是用户真正的终端
   DF_PICKED_RAW="$("$DF_GUM" choose --no-limit --ordered --output-delimiter $'\035' \
     --header "选择要安装的模块 (↑↓ 移动, x 勾选/取消, 回车确认) — 目标: ubuntu@26.04" \
     --selected-prefix "[✅] " --unselected-prefix "[  ] " \
     --selected.foreground 2 --item.foreground 7 \
-    --selected "${DF_DEFAULTS#,}" "${DF_ITEMS[@]}" || true)"
+    --selected "${DF_DEFAULTS#,}" "${DF_ITEMS[@]}" < /dev/tty || true)"
   if [ -z "$DF_PICKED_RAW" ]; then
     info "未选择任何模块, 退出"
     exit 0
@@ -624,7 +629,7 @@ if [ "$DF_TUI_SEL" -eq 1 ]; then
     fi
   done <<<"$DF_PICKED_RAW"
   df_check_requires "${DF_PICKED[@]}"
-  "$DF_GUM" confirm "安装 ${#DF_PICKED[@]} 个模块到 ubuntu@26.04?" || { info "已取消"; exit 0; }
+  "$DF_GUM" confirm "安装 ${#DF_PICKED[@]} 个模块到 ubuntu@26.04?" < /dev/tty || { info "已取消"; exit 0; }
 else
   DF_PICKED=("${DF_MODULES[@]}")
 fi
