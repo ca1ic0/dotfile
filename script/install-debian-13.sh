@@ -3,8 +3,8 @@
 # 生成命令: ./dotfile.py gen --all
 set -Eeuo pipefail
 
-EXPECTED_ID="ubuntu"
-EXPECTED_VERSION="26.04"
+EXPECTED_ID="debian"
+EXPECTED_VERSION="13"
 
 df_usage() {
   echo "用法: bash $0 [--dry-run] [--yes] [--no-tui] [--force]"
@@ -134,7 +134,7 @@ else
   fi
 fi
 
-export DOTFILES_DISTRO="ubuntu@26.04"
+export DOTFILES_DISTRO="debian@13"
 export DOTFILES_FAMILY="debian"
 
 DF_TUI_PROG=0
@@ -212,7 +212,7 @@ df_item_base='base — 基础环境: 常用 CLI (htop/btop/tree/jq/gdu) + git + 
      └─ cmake + ninja'
 df_desc_nodejs='Node.js 环境 (nvm + 最新版 node/npm)'
 df_requires_nodejs=''
-DF_SECTION_nodejs='ubuntu'
+DF_SECTION_nodejs='debian@13'
 df_item_nodejs='nodejs — Node.js 环境 (nvm + 最新版 node/npm)
      ├─ nvm (~/.nvm, 官方安装器)
      └─ 最新版 node + npm (nvm install node)'
@@ -246,7 +246,7 @@ df_item_docker='docker — Docker Engine (官方离线包一次性安装, 不注
      └─ docker-compose-plugin'
 df_desc_cuda_toolkit='NVIDIA CUDA Toolkit (Ubuntu/Debian 档案库优先; Fedora 与 Debian13 走 NVIDIA 官方源临时注册)'
 df_requires_cuda_toolkit='base'
-DF_SECTION_cuda_toolkit='ubuntu@26.04'
+DF_SECTION_cuda_toolkit='debian@13'
 df_item_cuda_toolkit='cuda-toolkit — NVIDIA CUDA Toolkit (Ubuntu/Debian 档案库优先; Fedora 与 Debian13 走 NVIDIA 官方源临时注册)
      ├─ cuda-toolkit 元包 (26.04 档案库 / fedora / debian13, NVIDIA 官方渠道)
      ├─ nvidia-cuda-toolkit (24.04 / debian12 档案库)
@@ -259,7 +259,7 @@ df_item_oneapi='oneapi — Intel oneAPI 工具链 (DPC++/icx; 官方 apt/yum 仓
      └─ intel-oneapi-compiler-dpcpp-cpp -> icx / icpx / DPC++ (2026.x, 约 1 GiB 下载)'
 df_desc_rocm='AMD ROCm (各目标档案库官方包; 26.04 为 rocm 7.1 元包, 其余为 hipcc/rocminfo 组件)'
 df_requires_rocm=''
-DF_SECTION_rocm='ubuntu@26.04'
+DF_SECTION_rocm='debian'
 df_item_rocm='rocm — AMD ROCm (各目标档案库官方包; 26.04 为 rocm 7.1 元包, 其余为 hipcc/rocminfo 组件)
      ├─ rocm 元包 (26.04: 7.1)
      └─ hipcc / rocminfo / rocm-smi (旧目标: 5.7)'
@@ -452,6 +452,54 @@ echo "已安装: Docker Engine (官方 .deb, suite=$SUITE, 未注册第三方源
 DOTFILE_EOF_3
 cat > "$DF_TMPDIR/script-04.sh" <<'DOTFILE_EOF_4'
 #!/usr/bin/env bash
+# CUDA Toolkit — NVIDIA 官方 debian13 仓库临时注册安装 (仅 ["debian@13"] 段使用)。
+# trixie 档案库无 nvidia-cuda-toolkit (容器实证), 上游 debian13 仓可用。
+# cuda-toolkit 元包依赖闭大多落在 NVIDIA 仓内, 本地 .deb 直装解不开依赖闭,
+# 属 install-script 规范「依赖闭过大的元包子集可退回仓库形式」例外:
+# 临时注册 → 安装 → 删除仓库文件退场 (keyring/pin 保留无害, 重装可复用)。
+set -euo pipefail
+
+# root 且无 sudo 二进制的环境 (容器常见): 透传 — 子进程里主脚本垫片不可见
+if [ "$(id -u)" = 0 ] && ! command -v sudo >/dev/null 2>&1; then
+  sudo() { "$@"; }
+fi
+
+REPO_BASE="https://developer.download.nvidia.com/compute/cuda/repos/debian13/x86_64"
+
+TMP="$(mktemp -d)"
+trap 'rm -rf "$TMP"' EXIT
+
+# ---- 安装: 解析仓库索引取最新 cuda-keyring 包 → 注册源 → 装 toolkit ----
+echo "==> 解析 NVIDIA debian13 仓库索引"
+curl -fsSL "$REPO_BASE/Packages.gz" -o "$TMP/Packages.gz"
+deb="$(gunzip -c "$TMP/Packages.gz" | awk '
+  $1 == "Package:" { cur = $2 }
+  $1 == "Filename:" && cur == "cuda-keyring" { fn = $2 }
+  END { print fn }')"
+if [ -z "$deb" ]; then
+  echo "错误: 索引中找不到 cuda-keyring (仓库布局可能已变)" >&2
+  exit 1
+fi
+
+echo "==> 安装 $deb (注册官方源 + 密钥 + pin)"
+curl -fsSL "$REPO_BASE/$deb" -o "$TMP/cuda-keyring.deb"
+sudo dpkg -i "$TMP/cuda-keyring.deb"
+sudo apt-get update
+
+echo "==> 安装 cuda-toolkit 元包 (跟随最新大版本, 不含驱动)"
+sudo apt-get install -y cuda-toolkit
+
+# ---- 退场: 移除仓库注册 (不再从 NVIDIA 拉任何东西; keyring/pin 留存无害) ----
+sudo rm -f /etc/apt/sources.list.d/cuda-*.list
+sudo apt-get update
+
+# ---- Verification ----
+# nvcc 落 /usr/local/cuda/bin (NVIDIA 仓包布局, 档案库版同路径)。
+/usr/local/cuda/bin/nvcc --version | tail -2
+echo "已安装: CUDA Toolkit (NVIDIA debian13 官方仓, 注册已移除)"
+DOTFILE_EOF_4
+cat > "$DF_TMPDIR/script-05.sh" <<'DOTFILE_EOF_5'
+#!/usr/bin/env bash
 # 配置 Intel oneAPI 官方 apt 源 (官方推荐方式: keyring + signed-by, 取代已废弃的 apt-key)。
 #   密钥: https://apt.repos.intel.com/intel-gpg-keys/GPG-PUB-KEY-INTEL-SW-PRODUCTS.PUB
 #   源:   deb [signed-by=...] https://apt.repos.intel.com/oneapi all main
@@ -496,7 +544,7 @@ if ! grep -qF 'https://apt.repos.intel.com/oneapi' <<<"$policy"; then
   exit 1
 fi
 echo "已配置: /etc/apt/sources.list.d/oneapi.list (keyring: ${KEYRING})"
-DOTFILE_EOF_4
+DOTFILE_EOF_5
 df_mod_base() {
   df_step 'sudo apt-get update -qq'
   df_step 'sudo apt-get install -y git htop btop tree curl jq gdu build-essential llvm clang cmake ninja-build'
@@ -512,7 +560,7 @@ df_mod_base() {
   df_step 'ninja --version'
 }
 df_mod_nodejs() {
-  df_step 'sudo apt-get install -y curl ca-certificates libatomic1'
+  df_step 'sudo apt-get install -y curl ca-certificates'
   df_step_embed "$DF_TMPDIR/script-01.sh" './scripts/install-nvm.sh'
 }
 df_mod_uv() {
@@ -541,16 +589,16 @@ df_mod_docker() {
   df_step_embed "$DF_TMPDIR/script-03.sh" './scripts/install-docker-debs.sh'
 }
 df_mod_cuda_toolkit() {
-  df_step 'sudo apt-get install -y cuda-toolkit'
-  df_step '/usr/local/cuda/bin/nvcc --version | tail -2'
+  df_step 'sudo apt-get install -y curl ca-certificates'
+  df_step_embed "$DF_TMPDIR/script-04.sh" './scripts/install-cuda-nvidia-repo.sh'
 }
 df_mod_oneapi() {
   df_step 'sudo apt-get install -y curl gnupg'
-  df_step_embed "$DF_TMPDIR/script-04.sh" './scripts/setup-intel-repo.sh'
+  df_step_embed "$DF_TMPDIR/script-05.sh" './scripts/setup-intel-repo.sh'
   df_step 'sudo apt-get install -y intel-oneapi-compiler-dpcpp-cpp'
 }
 df_mod_rocm() {
-  df_step 'sudo apt-get install -y --no-install-recommends rocm'
+  df_step 'sudo apt-get install -y --no-install-recommends hipcc rocminfo rocm-smi'
   df_step 'hipcc --version | head -3'
 }
 df_mod_agentharness() {
@@ -606,7 +654,7 @@ if [ "$DF_TUI_SEL" -eq 1 ]; then
   # 注意: 条目是多行的 (树状), 输出必须用记录分隔符 \035 原子读取, 按行读会把树状子行
   #       误当独立选择项喂给 df_pick_name, 然后被 set -e 无声击毙
   DF_PICKED_RAW="$("$DF_GUM" choose --no-limit --ordered --output-delimiter $'\035' \
-    --header "选择要安装的模块 (↑↓ 移动, x 勾选/取消, 回车确认) — 目标: ubuntu@26.04" \
+    --header "选择要安装的模块 (↑↓ 移动, x 勾选/取消, 回车确认) — 目标: debian@13" \
     --selected-prefix "[✅] " --unselected-prefix "[  ] " \
     --selected.foreground 2 --item.foreground 7 \
     --selected "${DF_DEFAULTS#,}" "${DF_ITEMS[@]}" || true)"
@@ -624,7 +672,7 @@ if [ "$DF_TUI_SEL" -eq 1 ]; then
     fi
   done <<<"$DF_PICKED_RAW"
   df_check_requires "${DF_PICKED[@]}"
-  "$DF_GUM" confirm "安装 ${#DF_PICKED[@]} 个模块到 ubuntu@26.04?" || { info "已取消"; exit 0; }
+  "$DF_GUM" confirm "安装 ${#DF_PICKED[@]} 个模块到 debian@13?" || { info "已取消"; exit 0; }
 else
   DF_PICKED=("${DF_MODULES[@]}")
 fi

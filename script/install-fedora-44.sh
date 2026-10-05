@@ -200,7 +200,7 @@ df_step_embed() {  # $1=脚本临时路径 $2=展示名
 }
 
 # ---- 模块注册表 (生成) ----------------------------------------------------
-DF_MODULES=(base nodejs uv dev-cli docker cuda-toolkit oneapi rocm agentharness)
+DF_MODULES=(base nodejs uv dev-cli tools docker cuda-toolkit oneapi rocm agentharness)
 df_desc_base='基础环境: 常用 CLI (htop/btop/tree/jq/gdu) + git + 编译工具链'
 df_requires_base=''
 DF_SECTION_base='fedora'
@@ -221,15 +221,20 @@ df_requires_uv=''
 DF_SECTION_uv='fedora'
 df_item_uv='uv — Astral uv — 极快的 Python 包/项目管理器
      └─ uv + uvx (~/.local/bin, 免 root)'
-df_desc_dev_cli='开发 CLI 工具集: gh / fzf / yazi / 飞书 / Notion CLI (ntn) / hexo-cli'
+df_desc_dev_cli='开发 CLI 工具集: gh / 飞书 / Notion CLI (ntn) / hexo-cli'
 df_requires_dev_cli='nodejs'
 DF_SECTION_dev_cli='fedora'
-df_item_dev_cli='dev-cli — 开发 CLI 工具集: gh / fzf / yazi / 飞书 / Notion CLI (ntn) / hexo-cli
-     ├─ gh / fzf (档案库直装)
-     ├─ yazi+ya (GitHub releases 官方 .deb / zip)
+df_item_dev_cli='dev-cli — 开发 CLI 工具集: gh / 飞书 / Notion CLI (ntn) / hexo-cli
+     ├─ gh (档案库直装)
      ├─ 飞书桌面版 (官方 API 直链)
      ├─ ntn — Notion CLI (npm)
      └─ hexo-cli (npm)'
+df_desc_tools='终端效率工具: yazi 文件管理器 + fzf 模糊查找'
+df_requires_tools=''
+DF_SECTION_tools='fedora'
+df_item_tools='tools — 终端效率工具: yazi 文件管理器 + fzf 模糊查找
+     ├─ yazi + ya (GitHub releases 官方产物)
+     └─ fzf (档案库直装)'
 df_desc_docker='Docker Engine (官方离线包一次性安装, 不注册第三方源)'
 df_requires_docker=''
 DF_SECTION_docker='fedora'
@@ -239,13 +244,12 @@ df_item_docker='docker — Docker Engine (官方离线包一次性安装, 不注
      ├─ containerd.io
      ├─ docker-buildx-plugin
      └─ docker-compose-plugin'
-df_desc_cuda_toolkit='NVIDIA CUDA Toolkit (Ubuntu 档案库官方包; 26.04 为 cuda-toolkit 13.x 元包, 旧目标为 nvidia-cuda-toolkit; Fedora 走 NVIDIA 官方源临时仓库)'
+df_desc_cuda_toolkit='NVIDIA CUDA Toolkit (Ubuntu/Debian 档案库优先; Fedora 与 Debian13 走 NVIDIA 官方源临时注册)'
 df_requires_cuda_toolkit='base'
 DF_SECTION_cuda_toolkit='fedora'
-df_item_cuda_toolkit='cuda-toolkit — NVIDIA CUDA Toolkit (Ubuntu 档案库官方包; 26.04 为 cuda-toolkit 13.x 元包, 旧目标为 nvidia-cuda-toolkit; Fedora 走 NVIDIA 官方源临时仓库)
-     ├─ cuda-toolkit 元包 (26.04, 跟随最新 13.x)
-     ├─ nvidia-cuda-toolkit (24.04/22.04/debian12)
-     ├─ cuda-toolkit 元包 (fedora, NVIDIA 官方源临时仓库)
+df_item_cuda_toolkit='cuda-toolkit — NVIDIA CUDA Toolkit (Ubuntu/Debian 档案库优先; Fedora 与 Debian13 走 NVIDIA 官方源临时注册)
+     ├─ cuda-toolkit 元包 (26.04 档案库 / fedora / debian13, NVIDIA 官方渠道)
+     ├─ nvidia-cuda-toolkit (24.04 / debian12 档案库)
      └─ nvcc + 开发库 + 工具, 不含 GPU 驱动'
 df_desc_oneapi='Intel oneAPI 工具链 (DPC++/icx; 官方 apt/yum 仓 — 上游无单组件离线形式, 离线全家桶数 GB, 按约定退回仓库形式)'
 df_requires_oneapi=''
@@ -253,10 +257,10 @@ DF_SECTION_oneapi='fedora'
 df_item_oneapi='oneapi — Intel oneAPI 工具链 (DPC++/icx; 官方 apt/yum 仓 — 上游无单组件离线形式, 离线全家桶数 GB, 按约定退回仓库形式)
      ├─ oneAPI 官方源 (apt: keyring+signed-by 常驻 / dnf: repofrompath 一次性)
      └─ intel-oneapi-compiler-dpcpp-cpp -> icx / icpx / DPC++ (2026.x, 约 1 GiB 下载)'
-df_desc_rocm='AMD ROCm (Ubuntu/Fedora 档案库官方包; 26.04 为 rocm 7.1 元包, 旧目标为 hipcc/rocminfo 5.7 组件)'
+df_desc_rocm='AMD ROCm (各目标档案库官方包; 26.04 为 rocm 7.1 元包, 其余为 hipcc/rocminfo 组件)'
 df_requires_rocm=''
 DF_SECTION_rocm='fedora'
-df_item_rocm='rocm — AMD ROCm (Ubuntu/Fedora 档案库官方包; 26.04 为 rocm 7.1 元包, 旧目标为 hipcc/rocminfo 5.7 组件)
+df_item_rocm='rocm — AMD ROCm (各目标档案库官方包; 26.04 为 rocm 7.1 元包, 其余为 hipcc/rocminfo 组件)
      ├─ rocm 元包 (26.04: 7.1)
      └─ hipcc / rocminfo / rocm-smi (旧目标: 5.7)'
 df_desc_agentharness='Agent CLI 全家桶 (npm 全局安装; hermes 走官方安装器收在 ~/.agentharness)'
@@ -412,16 +416,19 @@ df_mod_uv() {
   df_step '$HOME/.local/bin/uvx --version'
 }
 df_mod_dev_cli() {
-  df_step 'sudo dnf install -y gh curl fzf unzip'
+  df_step 'sudo dnf install -y gh curl'
   df_step 'gh --version'
-  df_step 'fzf --version'
-  df_step 'curl -fsSL -o /tmp/yazi.zip https://github.com/sxyazi/yazi/releases/latest/download/yazi-x86_64-unknown-linux-gnu.zip && unzip -oq /tmp/yazi.zip -d /tmp/yazi && sudo install -m 755 /tmp/yazi/*/yazi /tmp/yazi/*/ya /usr/local/bin/'
-  df_step 'yazi --version'
-  df_step 'ya --version'
   df_step_embed "$DF_TMPDIR/script-02.sh" './scripts/install-feishu.sh'
   df_step '. $HOME/.nvm/nvm.sh && nvm use --silent default && npm install -g ntn hexo-cli'
   df_step '. $HOME/.nvm/nvm.sh && nvm use --silent default && ntn --version'
   df_step '. $HOME/.nvm/nvm.sh && nvm use --silent default && hexo version | head -3'
+}
+df_mod_tools() {
+  df_step 'sudo dnf install -y curl fzf unzip'
+  df_step 'fzf --version'
+  df_step 'curl -fsSL -o /tmp/yazi.zip https://github.com/sxyazi/yazi/releases/latest/download/yazi-x86_64-unknown-linux-gnu.zip && unzip -oq /tmp/yazi.zip -d /tmp/yazi && sudo install -m 755 /tmp/yazi/*/yazi /tmp/yazi/*/ya /usr/local/bin/'
+  df_step 'yazi --version'
+  df_step 'ya --version'
 }
 df_mod_docker() {
   df_step 'sudo rpm --import https://download.docker.com/linux/fedora/gpg'
