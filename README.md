@@ -145,6 +145,10 @@ install = "sudo pacman -S --needed --noconfirm docker"
   (如 agentharness: 六个 agent CLI 一个文件、几行 npm), 统一收纳在一个根
   路径下 (`~/.agentharness/<工具名>/`)。优先用上游环境变量或 npm `--prefix`
   原生实现; 结尾以绝对路径逐个验证 (防 PATH 未生效)
+- **拆分粒度由部署复杂度决定**: 几行命令装完的不拆 (单 toml 即可); 只有
+  部署复杂的软件栈才拆成多个模块, 用 `requires` 表达依赖、各自独立演进 —
+  典型如 ML 环境: cuda-toolkit (版本矩阵、硬件分叉) / pytorch (源码或 wheel
+  渠道、XPU/CUDA 变体) 各自一个模块, 组合即环境
 
 ## 目录结构
 
