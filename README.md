@@ -145,9 +145,9 @@ install = "sudo pacman -S --needed --noconfirm docker"
   一次性安装 (.deb + `apt-get install ./pkg.deb`、tarball、独立安装器), 不给
   系统长期注册厂商源; 仅当上游离线形式不可行才退回仓库形式并注明
 - **一个软件包一个模块一个路径**: 功能内聚的一组软件就写成一个 module.toml
-  (如 agentharness: 六个 agent CLI 一个文件、几行 npm), 统一收纳在一个根
-  路径下 (`~/.agentharness/<工具名>/`)。优先用上游环境变量或 npm `--prefix`
-  原生实现; 结尾以绝对路径逐个验证 (防 PATH 未生效)
+  (如 agentharness: 六个 agent CLI 一个文件、几行 npm)。npm 系默认全局安装
+  (自然落在 nvm 的单一 node bin 路径, 不带 prefix); 无 npm 包的自带安装器
+  工具用上游环境变量定路径 (如 hermes 的 HERMES_HOME)。结尾逐个验证
 - **拆分粒度由部署复杂度决定**: 几行命令装完的不拆 (单 toml 即可); 只有
   部署复杂的软件栈才拆成多个模块, 用 `requires` 表达依赖、各自独立演进 —
   典型如 ML 环境: cuda-toolkit (版本矩阵、硬件分叉) / pytorch (源码或 wheel
