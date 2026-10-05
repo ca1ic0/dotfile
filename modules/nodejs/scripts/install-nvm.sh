@@ -11,12 +11,16 @@ echo "==> 安装 nvm $NVM_VERSION"
 # METHOD=script: 用 curl 拉 tarball 而非 git clone (容器里 git 的 GnuTLS 常握手失败, 且少一个依赖)
 curl -fsSL -o- "https://raw.githubusercontent.com/nvm-sh/nvm/$NVM_VERSION/install.sh" | METHOD=script bash
 
-# nvm 是 shell 函数, 安装脚本不在交互 shell 里, 需手动加载后才能用
+# nvm 是 shell 函数, 安装脚本不在交互 shell 里, 需手动加载后才能用;
+# 其函数体内存在未定义变量路径 (如远程索引不可达时的版本解析), set -u 会在
+# 函数调用时误杀 (STABLE: unbound variable) — 整个 nvm 交互区临时关闭 -u
+set +u
 . "$NVM_DIR/nvm.sh"
 
 echo "==> 安装最新版 Node.js"
 nvm install node
 nvm alias default node
+set -u
 
 # ---- Verification ----
 # node/npm 由本进程 nvm use 挂上 PATH, 失败由 set -e 拦截; 成功打印实际落点。

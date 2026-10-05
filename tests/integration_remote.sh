@@ -7,7 +7,7 @@ cd "$(dirname "$0")/.."
 HOST="${REMOTE_HOST:-100.108.141.76}"
 IMAGE="${IMAGE:-ubuntu:24.04}"
 TARGET="${TARGET:-ubuntu@24.04}"
-SCRIPT="$(mktemp /tmp/dotfile-integration-XXXXXX.sh)"
+SCRIPT="$(mktemp /tmp/dotfile-integration-XXXXXX)"
 trap 'rm -f "$SCRIPT"' EXIT
 
 echo "==> 生成安装脚本 (--target $TARGET, 全部组)"
@@ -24,8 +24,6 @@ REMOTE_CMD="docker run --rm -i $IMAGE bash -c '
   && echo ---- 验证 ---- \
   && command -v git \
   && command -v jq \
-  && command -v nvim \
-  && \$HOME/.local/bin/starship --version \
   && \$HOME/.local/bin/gum --version \
   && \$HOME/.local/bin/gum spin --spinner dot --title smoke -- true \
   && echo gum-smoke-OK

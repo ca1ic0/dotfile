@@ -27,7 +27,7 @@ class TestRenderE2E(unittest.TestCase):
     def test_base_selects_only_base_group(self):
         self.assertEqual(
             [pm.module.name for pm in self.plan_base.modules],
-            ["essentials", "git"],
+            ["base"],
         )
 
     def test_all_groups_order(self):
@@ -45,14 +45,12 @@ class TestRenderE2E(unittest.TestCase):
         self.assertIn('export DOTFILES_FAMILY="debian"', self.script_all)
 
     def test_commands_and_script_embedded(self):
-        self.assertIn("df_step 'sudo apt-get install -y git'", self.script_all)
-        self.assertIn("df_step 'sudo apt-get install -y neovim ripgrep fd-find curl'", self.script_all)
-        # starship 的官方安装脚本被完整嵌入 (嵌入编号随模块增删变化, 不写死)
-        self.assertIn("https://starship.rs/install.sh", self.script_all)
-        self.assertRegex(
+        self.assertIn(
+            "df_step 'sudo apt-get install -y git htop btop tree curl jq gdu build-essential llvm clang cmake ninja-build'",
             self.script_all,
-            r"df_step_embed \"\$DF_TMPDIR/script-\d+\.sh\" '\./scripts/install\.sh'",
         )
+        # uv 官方安装器一行内联 (不再包脚本)
+        self.assertIn("df_step 'curl -LsSf https://astral.sh/uv/install.sh | sh'", self.script_all)
 
     def test_tui_structure(self):
         # gum 自动引导 + 交互选择 + 模块注册表
@@ -67,13 +65,13 @@ class TestRenderE2E(unittest.TestCase):
             pm.module.name for pm in self.plan_all.modules
         ) + ")"
         self.assertIn(expected_registry, self.script_all)
-        self.assertIn("df_mod_starship()", self.script_all)
-        self.assertIn("df_requires_essentials=''", self.script_all)
+        self.assertIn("df_mod_agentharness()", self.script_all)
+        self.assertIn("df_requires_base=''", self.script_all)
         self.assertIn("df_check_requires", self.script_all)
         # 树状内容条目: 多行整体作为一个选项
-        self.assertIn("df_item_essentials=", self.script_all)
+        self.assertIn("df_item_base=", self.script_all)
         self.assertIn("     ├─ htop", self.script_all)
-        self.assertIn("     └─ jq", self.script_all)
+        self.assertIn("     └─ cmake + ninja", self.script_all)
         self.assertIn('eval "df_it=\\"\\$df_item_${df_n//-/_}\\""', self.script_all)
         # 降级模式与跳过选择
         self.assertIn("--no-tui)", self.script_all)

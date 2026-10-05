@@ -46,16 +46,17 @@ uv run python dotfile.py install --dry-run
 3. **逐步进度** — 每步 spinner + 完成 ✓; 命令原始输出收进日志文件, 失败自动展示尾部
 4. 结束汇总样式框, 附日志路径
 
-**选择的最小单位是模块 (软件包)**: 模块内的软件不可拆分勾选 — 例如 essentials
-里的 htop/tree/curl/jq 是同一条配方命令, 要么全装要么全不装。模块声明了 `content`
+**选择的最小单位是模块 (软件包)**: 模块内的软件不可拆分勾选 — 例如 base
+里的 htop/btop/gdu 等是同一条配方命令, 要么全装要么全不装。模块声明了 `content`
 时, 选择清单里会在模块下方以树状展示其内容 (子项纯展示, 勾选作用于整个模块):
 
 ```
-[✅] essentials — 常用 CLI 工具
-     ├─ htop
-     ├─ tree
-     ├─ curl
-     └─ jq
+[✅] base — 基础环境: 常用 CLI + git + 编译工具链
+     ├─ htop / btop / tree / curl / jq / gdu
+     ├─ git
+     ├─ build-essential (gcc/g++/make)
+     ├─ llvm + clang
+     └─ cmake + ninja
 [✅] git — Git 版本控制
      └─ git
 ```
@@ -138,9 +139,10 @@ install = "sudo pacman -S --needed --noconfirm docker"
 
 ### 软件添加约定
 
-- **Upstream First**: 安装通道选上游推荐的方式 — 先查官方文档列出的通道;
-  多通道时选与布局目标一致的那条; 发行版档案库优先于厂商第三方源
-  (写脚本前先 `apt-cache policy`)。详见 `~/.agents/skills/install-script/SKILL.md`
+- **选型决策流** (详见 `.agents/skills/install-script/SKILL.md`): 第一步永远查系统
+  包管理器 (`apt-cache policy` / `dnf repoquery`), 有则直接用; 没有则去官网/GitHub
+  调研官方安装方式, 其中 **npm 优先于一句话命令** (curl|sh) — 有包管理器语义;
+  需要第三方源的一律离线优先
 - **第三方仓库软件离线优先**: 需要加第三方源才能装的, 优先改为直接下载产物
   一次性安装 (.deb + `apt-get install ./pkg.deb`、tarball、独立安装器), 不给
   系统长期注册厂商源; 仅当上游离线形式不可行才退回仓库形式并注明
@@ -163,7 +165,7 @@ dotfile/
 │   ├── manifest.py   # module.toml 加载与校验
 │   ├── plan.py       # 组过滤, 配方解析, order/requires 排序
 │   └── render.py     # 计划 → 自包含 bash 脚本
-├── modules/          # 每个软件一个模块 (git/essentials/neovim/starship)
+├── modules/          # 每个软件包一个模块 (base/uv/docker/agentharness/...)
 └── tests/            # 单元测试 + 远程 docker 集成测试脚本
 ```
 

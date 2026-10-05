@@ -3,7 +3,7 @@ name = "cuda-toolkit"
 description = "NVIDIA CUDA Toolkit (Ubuntu 档案库官方包; 26.04 为 cuda-toolkit 13.x 元包, 旧目标为 nvidia-cuda-toolkit; Fedora 走 NVIDIA 官方源临时仓库)"
 groups = ["gpu"]
 order = 40
-requires = ["buildenv"]
+requires = ["base"]
 content = ["cuda-toolkit 元包 (26.04, 跟随最新 13.x)", "nvidia-cuda-toolkit (24.04/22.04/debian12)", "cuda-toolkit 元包 (fedora, NVIDIA 官方源临时仓库)", "nvcc + 开发库 + 工具, 不含 GPU 驱动"]
 
 ["ubuntu@26.04"]

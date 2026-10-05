@@ -4,21 +4,24 @@ description = "Astral uv — 极快的 Python 包/项目管理器"
 groups = ["dev"]
 order = 15
 requires = []
-content = ["uv + uvx"]
+content = ["uv + uvx (~/.local/bin, 免 root)"]
 
 [debian]
+# 核心就是官方一行安装器, 直接内联 (不为其包脚本); 装到 ~/.local/bin 免 root。
+# 取舍: 发行版档案库的 uv 版本滞后, 走上游最新通道。
 install = [
   "sudo apt-get install -y curl ca-certificates",
-  "./scripts/install.sh",
+  "curl -LsSf https://astral.sh/uv/install.sh | sh",
+  "$HOME/.local/bin/uv --version",
+  "$HOME/.local/bin/uvx --version",
 ]
 
 [fedora]
-# 与 [debian] 段语义对齐 (纯 curl 模块): 前置包 curl/ca-certificates 在 Fedora 44
-# 档案库同名存在 (repoquery fc44 已核实), 唯一差异 apt-get → dnf, 无厂商源。
-# uv 本体仍走官方安装器 (scripts/install.sh, 落 ~/.local/bin, 免 root, 含 uvx):
-# 取舍 — Fedora 44 档案库虽已收录 uv 0.12.19 (updates, repoquery 核实), 但为与
-# debian 同一通道、跟随上游最新版, 保持上游推荐的 standalone installer。
+# 同 debian 段, 仅前置包命令换 dnf (curl/ca-certificates 档案库同名, repoquery 已核实);
+# Fedora 44 档案库虽收录 uv 0.12.19, 为与 debian 同通道跟随上游最新, 保持官方安装器。
 install = [
   "sudo dnf install -y curl ca-certificates",
-  "./scripts/install.sh",
+  "curl -LsSf https://astral.sh/uv/install.sh | sh",
+  "$HOME/.local/bin/uv --version",
+  "$HOME/.local/bin/uvx --version",
 ]

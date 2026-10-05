@@ -1,0 +1,41 @@
+[module]
+name = "base"
+description = "基础环境: 常用 CLI (htop/btop/tree/jq/gdu) + git + 编译工具链"
+groups = ["base"]
+order = 10
+requires = []
+content = ["htop / btop / tree / curl / jq / gdu", "git", "build-essential (gcc/g++/make)", "llvm + clang", "cmake + ninja"]
+
+[debian]
+# 合并自 essentials + git + buildenv 三模块; btop/gdu 五目标档案库均收录 (容器实证)。
+# 一条大安装命令 + 逐工具验证; dnf 系无 build-essential, 直列 gcc gcc-c++ make。
+install = [
+  "sudo apt-get update -qq",
+  "sudo apt-get install -y git htop btop tree curl jq gdu build-essential llvm clang cmake ninja-build",
+  "git --version",
+  "htop --version | head -1",
+  "btop --version",
+  "tree --version | head -1",
+  "jq --version",
+  "gdu --version",
+  "gcc --version | head -1",
+  "clang --version | head -1",
+  "cmake --version | head -1",
+  "ninja --version",
+]
+
+[fedora]
+# 同 [debian] 语义; Fedora 无 build-essential, 直列 gcc gcc-c++ make (repoquery 已核实)。
+install = [
+  "sudo dnf install -y git htop btop tree curl jq gdu gcc gcc-c++ make llvm clang cmake ninja-build",
+  "git --version",
+  "htop --version | head -1",
+  "btop --version",
+  "tree --version | head -1",
+  "jq --version",
+  "gdu --version",
+  "gcc --version | head -1",
+  "clang --version | head -1",
+  "cmake --version | head -1",
+  "ninja --version",
+]

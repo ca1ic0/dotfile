@@ -6,10 +6,16 @@ order = 35
 requires = ["nodejs"]
 content = ["hexo-cli (npm -g, 经 nvm 的 node)"]
 
+# hexo-cli 是纯 npm 包 (Fedora 档案库亦未收录), 直接内联 npm 命令, 无需安装脚本;
+# node/npm 由 nodejs 模块经 nvm 提供, 非交互 shell 需先加载 nvm。
 [debian]
-install = ["./scripts/install-hexo.sh"]
+install = [
+  ". $HOME/.nvm/nvm.sh && nvm use --silent default && npm install -g hexo-cli",
+  ". $HOME/.nvm/nvm.sh && nvm use --silent default && hexo version | head -3",
+]
 
-# hexo-cli 是纯 npm 包, Fedora 44 档案库未收录 (repoquery 无果), 维持 npm -g 通道;
-# node 来自 nodejs 模块的 nvm, 本模块无 dnf 前置包 — 段同 debian, 脚本与发行版无关。
 [fedora]
-install = ["./scripts/install-hexo.sh"]
+install = [
+  ". $HOME/.nvm/nvm.sh && nvm use --silent default && npm install -g hexo-cli",
+  ". $HOME/.nvm/nvm.sh && nvm use --silent default && hexo version | head -3",
+]
