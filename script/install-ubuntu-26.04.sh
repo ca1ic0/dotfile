@@ -232,18 +232,18 @@ df_desc_uv='Astral uv — 极快的 Python 包/项目管理器'
 df_requires_uv=''
 DF_SECTION_uv='debian'
 df_item_uv='uv — Astral uv — 极快的 Python 包/项目管理器
-     └─ uv'
+     └─ uv + uvx'
 df_desc_neovim='Neovim 编辑器 + 常用依赖'
 df_requires_neovim=''
 DF_SECTION_neovim='debian'
 df_item_neovim='neovim — Neovim 编辑器 + 常用依赖
      ├─ neovim
      ├─ ripgrep
-     └─ fd-find'
-df_desc_docker='Docker Engine (官方 apt 源)'
+     └─ fd (fdfind 兼容链接)'
+df_desc_docker='Docker Engine (官方 .deb 离线安装, 不注册第三方源)'
 df_requires_docker=''
 DF_SECTION_docker='debian'
-df_item_docker='docker — Docker Engine (官方 apt 源)
+df_item_docker='docker — Docker Engine (官方 .deb 离线安装, 不注册第三方源)
      ├─ docker-ce
      ├─ docker-ce-cli
      ├─ containerd.io
@@ -259,26 +259,27 @@ df_requires_hexo='nodejs'
 DF_SECTION_hexo='debian'
 df_item_hexo='hexo — Hexo 静态博客框架 (hexo-cli)
      └─ hexo-cli (npm -g, 经 nvm 的 node)'
-df_desc_cuda_toolkit='NVIDIA CUDA Toolkit (Ubuntu 档案库官方包)'
-df_requires_cuda_toolkit=''
-DF_SECTION_cuda_toolkit='debian'
-df_item_cuda_toolkit='cuda-toolkit — NVIDIA CUDA Toolkit (Ubuntu 档案库官方包)
-     ├─ cuda-toolkit 元包 (跟随最新 13.x)
+df_desc_cuda_toolkit='NVIDIA CUDA Toolkit (Ubuntu 档案库官方包; 26.04 为 cuda-toolkit 13.x 元包, 旧目标为 nvidia-cuda-toolkit)'
+df_requires_cuda_toolkit='buildenv'
+DF_SECTION_cuda_toolkit='ubuntu@26.04'
+df_item_cuda_toolkit='cuda-toolkit — NVIDIA CUDA Toolkit (Ubuntu 档案库官方包; 26.04 为 cuda-toolkit 13.x 元包, 旧目标为 nvidia-cuda-toolkit)
+     ├─ cuda-toolkit 元包 (26.04, 跟随最新 13.x)
+     ├─ nvidia-cuda-toolkit (24.04/22.04/debian12)
      └─ nvcc + 开发库 + 工具, 不含 GPU 驱动'
-df_desc_oneapi='Intel oneAPI 工具链 (DPC++/icx)'
+df_desc_oneapi='Intel oneAPI 工具链 (DPC++/icx; 官方 apt 仓 — 上游无单组件离线形式, 离线全家桶数 GB, 按约定退回仓库形式)'
 df_requires_oneapi=''
 DF_SECTION_oneapi='debian'
-df_item_oneapi='oneapi — Intel oneAPI 工具链 (DPC++/icx)
+df_item_oneapi='oneapi — Intel oneAPI 工具链 (DPC++/icx; 官方 apt 仓 — 上游无单组件离线形式, 离线全家桶数 GB, 按约定退回仓库形式)
      ├─ oneAPI apt 源 (apt.repos.intel.com/oneapi, GPG keyring + signed-by)
      └─ intel-oneapi-compiler-dpcpp-cpp -> icx / icpx / DPC++ (2026.x, 约 1 GiB 下载)'
-df_desc_rocm='AMD ROCm (Ubuntu 档案库官方包)'
+df_desc_rocm='AMD ROCm (Ubuntu 档案库官方包; 26.04 为 rocm 7.1 元包, 旧目标为 hipcc/rocminfo 5.7 组件)'
 df_requires_rocm=''
-DF_SECTION_rocm='debian'
-df_item_rocm='rocm — AMD ROCm (Ubuntu 档案库官方包)
-     ├─ rocm 元包 (7.1)
-     └─ hipcc / rocminfo / HIP 运行时'
+DF_SECTION_rocm='ubuntu@26.04'
+df_item_rocm='rocm — AMD ROCm (Ubuntu 档案库官方包; 26.04 为 rocm 7.1 元包, 旧目标为 hipcc/rocminfo 5.7 组件)
+     ├─ rocm 元包 (26.04: 7.1)
+     └─ hipcc / rocminfo / rocm-smi (旧目标: 5.7)'
 df_desc_agentharness='Agent CLI 全家桶, 统一收纳到 ~/.agentharness/<工具名>/'
-df_requires_agentharness='nodejs'
+df_requires_agentharness='nodejs git'
 DF_SECTION_agentharness='debian'
 df_item_agentharness='agentharness — Agent CLI 全家桶, 统一收纳到 ~/.agentharness/<工具名>/
      ├─ claude (@anthropic-ai/claude-code)
@@ -293,12 +294,13 @@ cat > "$DF_TMPDIR/script-01.sh" <<'DOTFILE_EOF_1'
 # nvm 装到 ~/.nvm 并把初始化写进 ~/.bashrc; 非交互 shell 需自行 source nvm.sh。
 set -euo pipefail
 
+NVM_VERSION="${NVM_VERSION:-v0.40.8}" # 上游 README 的安装示例均 pin release tag, 不追 master
 export NVM_DIR="$HOME/.nvm"
 
 # ---- 安装 ----
+echo "==> 安装 nvm $NVM_VERSION"
 # METHOD=script: 用 curl 拉 tarball 而非 git clone (容器里 git 的 GnuTLS 常握手失败, 且少一个依赖)
-echo "==> 安装 nvm"
-curl -fsSL -o- https://raw.githubusercontent.com/nvm-sh/nvm/master/install.sh | METHOD=script bash
+curl -fsSL -o- "https://raw.githubusercontent.com/nvm-sh/nvm/$NVM_VERSION/install.sh" | METHOD=script bash
 
 # nvm 是 shell 函数, 安装脚本不在交互 shell 里, 需手动加载后才能用
 . "$NVM_DIR/nvm.sh"
@@ -308,9 +310,12 @@ nvm install node
 nvm alias default node
 
 # ---- Verification ----
+# node/npm 由本进程 nvm use 挂上 PATH, 失败由 set -e 拦截; 成功打印实际落点。
+echo "==> 验证安装结果"
 nvm use --silent default
 node --version
 npm --version
+echo "已安装: $(command -v node) ($(node --version))"
 DOTFILE_EOF_1
 cat > "$DF_TMPDIR/script-02.sh" <<'DOTFILE_EOF_2'
 #!/usr/bin/env bash
@@ -336,68 +341,61 @@ echo "已安装: $HOME/.local/bin/uv, $HOME/.local/bin/uvx"
 DOTFILE_EOF_2
 cat > "$DF_TMPDIR/script-03.sh" <<'DOTFILE_EOF_3'
 #!/usr/bin/env bash
-# 配置 Docker 官方 apt 源 (download.docker.com) — 官方推荐的 keyring 方式, deb822 格式。
-# 写法依据官方文档: https://docs.docker.com/engine/install/ubuntu/
-#   * GPG key (ASCII) 落 /etc/apt/keyrings/docker.asc, 源文件用 Signed-By 指向它
-#   * suite 取本机代号: ubuntu 26.04=resolute 24.04=noble 22.04=jammy (已实测源上有 resolute)
-#   * debian 家族分仓: ID=debian 走 linux/debian, 其余 (ubuntu/pop 等) 走 linux/ubuntu
+# Docker Engine 离线安装: 直取官方 .deb 一次性安装, 不给系统注册第三方源
+# (软件添加约定: 第三方仓库软件离线优先; 官方 "Install from a package" 通道)。
+# 从 download.docker.com 的 Packages 索引解析五个组件各自最新的 .deb,
+# apt-get install ./*.deb 让依赖由发行版官方库解析。
 set -euo pipefail
 
-# root 且无 sudo 二进制的环境 (容器常见): 透传。
-# 生成器主脚本里有同名垫片, 但本脚本经 bash 子进程执行, 垫片传不进来, 需自带。
+# root 且无 sudo 二进制的环境 (容器常见): 透传 — 子进程里主脚本垫片不可见
 if [ "$(id -u)" = 0 ] && ! command -v sudo >/dev/null 2>&1; then
   sudo() { "$@"; }
 fi
 
-# 官方源按发行版分仓: ubuntu 仓 (含衍生版) 与 debian 仓, 二者 URL 仅差这一段
-REPO_ID="ubuntu"
-case "${ID:-}" in
-  debian) REPO_ID="debian" ;;
-esac
+. /etc/os-release   # 本脚本在子进程执行, 主脚本的 os-release 变量传不进来, 必须自行加载
 
-# 官方文档取 ${UBUNTU_CODENAME:-$VERSION_CODENAME} (ubuntu 26.04 起 os-release 带 UBUNTU_CODENAME)
-CODENAME="$(. /etc/os-release && echo "${UBUNTU_CODENAME:-$VERSION_CODENAME}")"
-if [ -z "$CODENAME" ]; then
-  echo "setup-docker-repo: 无法从 /etc/os-release 取得发行版代号" >&2
+BASE="https://download.docker.com/linux"
+case "${ID:-}" in
+  debian) REPO="$BASE/debian" ;;
+  *)      REPO="$BASE/ubuntu" ;;
+esac
+SUITE="${UBUNTU_CODENAME:-$VERSION_CODENAME}"
+if [ -z "$SUITE" ]; then
+  echo "错误: 无法从 /etc/os-release 取得发行版代号" >&2
   exit 1
 fi
 
-echo "==> 安装 GPG keyring 到 /etc/apt/keyrings/docker.asc"
-sudo install -m 0755 -d /etc/apt/keyrings
-sudo curl -fsSL "https://download.docker.com/linux/${REPO_ID}/gpg" -o /etc/apt/keyrings/docker.asc
-sudo chmod a+r /etc/apt/keyrings/docker.asc
+TMP="$(mktemp -d)"
+trap 'rm -rf "$TMP"' EXIT
 
-echo "==> 写入 deb822 源文件 /etc/apt/sources.list.d/docker.sources"
-sudo tee /etc/apt/sources.list.d/docker.sources <<EOF
-Types: deb
-URIs: https://download.docker.com/linux/${REPO_ID}
-Suites: ${CODENAME}
-Components: stable
-Architectures: $(dpkg --print-architecture)
-Signed-By: /etc/apt/keyrings/docker.asc
-EOF
+# ---- 安装: 解析索引并下载五个组件的最新 .deb ----
+INDEX="$TMP/Packages.gz"
+curl -fsSL "$REPO/dists/$SUITE/stable/binary-amd64/Packages.gz" -o "$INDEX"
 
-echo "==> apt-get update 刷新索引"
-sudo apt-get update
+# 索引按版本升序排列, 逐包取其最后一个 Filename 即最新版
+for pkg in docker-ce docker-ce-cli containerd.io docker-buildx-plugin docker-compose-plugin; do
+  deb="$(gunzip -c "$INDEX" | awk -v p="$pkg" '
+    $1 == "Package:" { cur = $2 }
+    $1 == "Filename:" && cur == p { fn = $2 }
+    END { print fn }')"
+  if [ -z "$deb" ]; then
+    echo "错误: 索引中找不到 $pkg (suite=$SUITE)" >&2
+    exit 1
+  fi
+  curl -fsSL "$REPO/$deb" -o "$TMP/$(basename "$deb")"
+  echo "==> 已下载 $(basename "$deb")"
+done
 
-# ---------------------------------------------------------------------------
-# Verification — 确认脚本到底配置成了什么
-# 用意: 本脚本只配源、不装包, 没有二进制可跑 --version, 验证对象是「源已生效」:
-#   1. keyring 与 deb822 源文件确实落盘且非空;
-#   2. apt-cache policy 查本模块要装的主包 docker-ce, 完整 policy 输出先原样
-#      打印, 再 grep 断言版本表里出现 download.docker.com/linux/${REPO_ID}
-#      的条目 — 即 apt 真的从这个源拿到了 docker-ce 的候选版本。若 suite/
-#      component/arch 配错, update 阶段拿不到该源的 Packages 索引 (apt-get
-#      update 对个别索引失败可能只发 warning 仍以 0 退出, 所以不能只靠它
-#      的退出码), 这里就匹配不到, grep 非零退出, 由开头的 set -e 让整个
-#      脚本失败。grep 命中的源条目直接打印留档, 不吞任何输出。
-echo "==> 验证 Docker 源已生效"
-test -s /etc/apt/keyrings/docker.asc
-test -s /etc/apt/sources.list.d/docker.sources
-POLICY="$(apt-cache policy docker-ce)"
-echo "$POLICY"
-echo "$POLICY" | grep -F "https://download.docker.com/linux/${REPO_ID}"
-echo "已配置: Docker 官方 apt 源 (linux/${REPO_ID}, suite=${CODENAME}, keyring=/etc/apt/keyrings/docker.asc)"
+# 本地 .deb 交给 apt 安装, 依赖从发行版官方库解析, 不注册 docker 源
+sudo apt-get install -y \
+  "$TMP"/docker-ce_*.deb "$TMP"/docker-ce-cli_*.deb "$TMP"/containerd.io_*.deb \
+  "$TMP"/docker-buildx-plugin_*.deb "$TMP"/docker-compose-plugin_*.deb
+
+# ---- Verification ----
+# 容器内 dockerd 起不来属预期 (无特权), 验证 CLI 与插件落地即可。
+docker --version
+docker compose version
+echo "已安装: Docker Engine (官方 .deb, suite=$SUITE, 未注册第三方源)"
 DOTFILE_EOF_3
 cat > "$DF_TMPDIR/script-04.sh" <<'DOTFILE_EOF_4'
 #!/usr/bin/env bash
@@ -478,26 +476,32 @@ sudo apt-get update --allow-releaseinfo-change
 # --- Verification ---
 # 本脚本只配源、不装包, 「装成了什么」= Intel 源是否真的被 apt 采纳。apt-get update
 # 跑完只说明网络可达; 真正的判据是 Intel 索引通过了 keyring 签名校验并进入包缓存,
-# 即 apt-cache policy 在 intel-basekit (oneAPI Base Toolkit 元包, 此源必有) 的版本表里
+# 即 apt-cache policy 在 intel-basekit (本模块要装的主包) 的版本表里
 # 列出 https://apt.repos.intel.com/oneapi 的候选版本。看不到说明 keyring/list 有误,
 # 立即 exit 1 让整条安装链失败, 而不是留下一个看似成功的坏源。
-echo "==> Verification: apt-cache policy intel-basekit"
-policy="$(apt-cache policy intel-basekit)"
+echo "==> Verification: apt-cache policy intel-oneapi-compiler-dpcpp-cpp"
+policy="$(apt-cache policy intel-oneapi-compiler-dpcpp-cpp)"
 echo "$policy"
 if ! grep -qF 'https://apt.repos.intel.com/oneapi' <<<"$policy"; then
-  echo "错误: apt-cache policy intel-basekit 未看到来自 https://apt.repos.intel.com/oneapi 的候选版本, Intel 源未生效" >&2
+  echo "错误: apt-cache policy intel-oneapi-compiler-dpcpp-cpp 未看到来自 https://apt.repos.intel.com/oneapi 的候选版本, Intel 源未生效" >&2
   exit 1
 fi
 echo "已配置: /etc/apt/sources.list.d/oneapi.list (keyring: ${KEYRING})"
 DOTFILE_EOF_6
 df_mod_essentials() {
+  df_step 'sudo apt-get update -qq'
   df_step 'sudo apt-get install -y htop tree curl jq'
+  df_step 'htop --version | head -1'
+  df_step 'jq --version'
+  df_step 'tree --version | head -1'
+  df_step 'curl --version | head -1'
 }
 df_mod_git() {
   df_step 'sudo apt-get install -y git'
+  df_step 'git --version'
 }
 df_mod_buildenv() {
-  df_step 'sudo apt-get install -y build-essential gcc llvm clang make cmake ninja-build'
+  df_step 'sudo apt-get install -y build-essential llvm clang cmake ninja-build'
   df_step 'gcc --version | head -1'
   df_step 'clang --version | head -1'
   df_step 'cmake --version | head -1'
@@ -513,11 +517,14 @@ df_mod_uv() {
 }
 df_mod_neovim() {
   df_step 'sudo apt-get install -y neovim ripgrep fd-find curl'
+  df_step 'sudo ln -sf /usr/bin/fdfind /usr/local/bin/fd'
+  df_step 'nvim --version | head -1'
+  df_step 'rg --version | head -1'
+  df_step 'fd --version | head -1'
 }
 df_mod_docker() {
-  df_step 'sudo apt-get install -y curl ca-certificates gnupg'
-  df_step_embed "$DF_TMPDIR/script-03.sh" './scripts/setup-docker-repo.sh'
-  df_step 'sudo apt-get install -y docker-ce docker-ce-cli containerd.io docker-buildx-plugin docker-compose-plugin'
+  df_step 'sudo apt-get install -y curl ca-certificates'
+  df_step_embed "$DF_TMPDIR/script-03.sh" './scripts/install-docker-debs.sh'
 }
 df_mod_starship() {
   df_step 'sudo apt-get install -y curl'
@@ -528,6 +535,7 @@ df_mod_hexo() {
 }
 df_mod_cuda_toolkit() {
   df_step 'sudo apt-get install -y cuda-toolkit'
+  df_step '/usr/local/cuda/bin/nvcc --version | tail -2'
 }
 df_mod_oneapi() {
   df_step 'sudo apt-get install -y curl gnupg'
@@ -536,6 +544,7 @@ df_mod_oneapi() {
 }
 df_mod_rocm() {
   df_step 'sudo apt-get install -y --no-install-recommends rocm'
+  df_step 'hipcc --version | head -3'
 }
 df_mod_agentharness() {
   df_step '. $HOME/.nvm/nvm.sh && nvm use --silent default && npm install -g --prefix $HOME/.agentharness/claude @anthropic-ai/claude-code'
