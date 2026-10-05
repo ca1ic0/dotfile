@@ -1,0 +1,66 @@
+[module]
+name = "dev-cli"
+description = "开发 CLI 工具集: gh / fzf / yazi / 飞书 / Notion CLI (ntn) / hexo-cli"
+groups = ["dev"]
+order = 16
+requires = ["nodejs"]
+content = ["gh / fzf (档案库直装)", "yazi+ya (GitHub releases 官方 .deb / zip)", "飞书桌面版 (官方 API 直链)", "ntn — Notion CLI (npm)", "hexo-cli (npm)"]
+
+[debian]
+# gh: 选型决策流第 1 步即止, 五目标的档案库均收录 (容器实证 Candidate:
+#   ubuntu:26.04 → 2.46.0-4, 24.04 → 2.45.0-1ubuntu0.3, 22.04 → 2.4.0+dfsg1-2,
+#   debian:12 → 2.23.0+dfsg1-1), 系统包直达, 不配官方源脚本。若日后出现档案库
+#   缺 gh 的目标, 再按 docker 模块范式直取 cli.github.com 的 .deb — 注意该源
+#   suite 是 'stable' 而非发行版代号 (dists/jammy|bookworm/... 实测 404)。
+#
+# 飞书走决策流第 4 步 (离线直装优先): 档案库无候选, 官方也无 apt 仓库, 官网是
+#   JS SPA 无静态链接, 唯一通道是 https://www.feishu.cn/api/package_info?platform=10
+#   返回的短时效签名 CDN 直链 (~30 分钟过期, 无法离线拼接) →
+#   scripts/install-feishu.sh 装时现取 (JSON 里 & 转义 \u0026 须还原否则 403) →
+#   md5 实校 → apt-get install ./pkg 本地装, 不注册任何源。旋钮
+#   FEISHU_VERSION 可 pin 校验 (该渠道只有最新版)。包名是 bytedance-feishu-stable;
+#   GUI 容器内无法启动属预期, 验证包登记 + 二进制落地。
+#
+# ntn (Notion CLI): 档案库无 (apt 的 notion 是同名平铺窗口管理器, 与 Notion 无关,
+#   严禁误装); 官方 npm 包名就是 ntn (maintainer @makenotion.com, 官方确认; 注意
+#   notion-cli@0.0.0 是社区占位包)。node 由 nodejs 模块经 nvm 提供, 非交互 shell
+#   需先加载。备选官方通道 (零 node 依赖): curl -fsSL https://ntn.dev | bash
+#   (静态 musl 二进制, NTN_VERSION 可钉版)。
+#
+# hexo-cli: 官方 npm 包, 由独立模块并入。
+# fzf: 五目标档案库均收录 (26.04→0.67.0 / 24.04→0.44.1 / 22.04→0.29.0 /
+#   debian12→0.38.0, 均为 junegunn/fzf 本尊), 直装; 版本随发行版, 偏旧可接受。
+# yazi: 五目标档案库均无 (同名陷阱排查过, 无撞名包), 上游 sxyazi/yazi 发布官方
+#   .deb 资产 (releases/latest/download/yazi-x86_64-unknown-linux-gnu.deb, 容器
+#   实测 200; 仅 x86_64), 一行内联直装, 含伴生 ya 命令。CalVer 版本随 latest 走。
+install = [
+  "sudo apt-get install -y gh curl ca-certificates fzf",
+  "gh --version",
+  "fzf --version",
+  "curl -fsSL -o /tmp/yazi.deb https://github.com/sxyazi/yazi/releases/latest/download/yazi-x86_64-unknown-linux-gnu.deb && sudo apt-get install -y /tmp/yazi.deb",
+  "yazi --version",
+  "ya --version",
+  "./scripts/install-feishu.sh",
+  ". $HOME/.nvm/nvm.sh && nvm use --silent default && npm install -g ntn hexo-cli",
+  ". $HOME/.nvm/nvm.sh && nvm use --silent default && ntn --version",
+  ". $HOME/.nvm/nvm.sh && nvm use --silent default && hexo version | head -3",
+]
+
+[fedora]
+# 同 [debian] 语义; gh 走 fedora 档案库 (repoquery 实证 updates 源 2.97.0-2.fc44)。
+# 飞书同款脚本直装 (rpm 变体 platform=11/13, 脚本内按 os-release 分流; fedora
+# 镜像自带 curl)。npm 系与 debian 段一致 (经 nvm 的 node)。
+# yazi: fedora 无 .deb 资产, 用官方 zip (内含 yazi 主程序 + ya 伴生命令 +
+#   completions, 顶层目录 yazi-x86_64-unknown-linux-gnu/), 解压装双二进制。
+install = [
+  "sudo dnf install -y gh curl fzf unzip",
+  "gh --version",
+  "fzf --version",
+  "curl -fsSL -o /tmp/yazi.zip https://github.com/sxyazi/yazi/releases/latest/download/yazi-x86_64-unknown-linux-gnu.zip && unzip -oq /tmp/yazi.zip -d /tmp/yazi && sudo install -m 755 /tmp/yazi/*/yazi /tmp/yazi/*/ya /usr/local/bin/",
+  "yazi --version",
+  "ya --version",
+  "./scripts/install-feishu.sh",
+  ". $HOME/.nvm/nvm.sh && nvm use --silent default && npm install -g ntn hexo-cli",
+  ". $HOME/.nvm/nvm.sh && nvm use --silent default && ntn --version",
+  ". $HOME/.nvm/nvm.sh && nvm use --silent default && hexo version | head -3",
+]

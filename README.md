@@ -1,6 +1,30 @@
 # dotfile — 声明式多发行版软件安装脚本生成器
 
-用一份声明式的模块定义, 生成**自包含的 bash 安装脚本**。目标机零依赖 (只需 bash),
+**在目标机上装全套环境, 一行命令** (CI 每次提交自动生成, 目标机零依赖只需 bash;
+想要 TUI 勾选界面就先下载成文件再执行, 想装全部模块加 `-- --yes`):
+
+```bash
+# Ubuntu 26.04
+curl -fsSL https://raw.githubusercontent.com/ca1ic0/dotfile/main/script/install-ubuntu-26.04.sh | bash
+# Ubuntu 24.04
+curl -fsSL https://raw.githubusercontent.com/ca1ic0/dotfile/main/script/install-ubuntu-24.04.sh | bash
+# Ubuntu 22.04
+curl -fsSL https://raw.githubusercontent.com/ca1ic0/dotfile/main/script/install-ubuntu-22.04.sh | bash
+# Debian 12
+curl -fsSL https://raw.githubusercontent.com/ca1ic0/dotfile/main/script/install-debian-12.sh | bash
+# Fedora 44
+curl -fsSL https://raw.githubusercontent.com/ca1ic0/dotfile/main/script/install-fedora-44.sh | bash
+```
+
+默认装 base 组 (常用 CLI + git + 编译工具链); 交互勾选模块 (agent CLI 全家桶、
+GPU 工具链、开发 CLI 工具集等):
+
+```bash
+curl -fsSL -o install.sh https://raw.githubusercontent.com/ca1ic0/dotfile/main/script/install-ubuntu-26.04.sh
+bash install.sh          # TUI: ↑↓ 移动, x 勾选, 回车确认
+```
+
+本仓库是什么: 用一份声明式的模块定义, 生成上述**自包含 bash 安装脚本**的生成器。
 不部署配置文件、不做软链接 —— 只管装软件。
 
 ## 设计理念
