@@ -200,7 +200,7 @@ df_step_embed() {  # $1=脚本临时路径 $2=展示名
 }
 
 # ---- 模块注册表 (生成) ----------------------------------------------------
-DF_MODULES=(essentials git uv neovim docker starship hexo cuda-toolkit oneapi rocm hermes)
+DF_MODULES=(essentials git buildenv nodejs uv neovim docker starship hexo cuda-toolkit oneapi rocm hermes pi claude-code minimax zcode opencode)
 df_desc_essentials='常用 CLI 工具'
 df_requires_essentials=''
 DF_SECTION_essentials='debian'
@@ -214,6 +214,20 @@ df_requires_git=''
 DF_SECTION_git='debian'
 df_item_git='git — Git 版本控制
      └─ git'
+df_desc_buildenv='编译工具链 (gcc/llvm/clang/cmake/ninja)'
+df_requires_buildenv=''
+DF_SECTION_buildenv='debian'
+df_item_buildenv='buildenv — 编译工具链 (gcc/llvm/clang/cmake/ninja)
+     ├─ build-essential (gcc/g++/make)
+     ├─ llvm + clang
+     ├─ cmake
+     └─ ninja'
+df_desc_nodejs='Node.js 环境 (nvm + 最新版 node/npm)'
+df_requires_nodejs=''
+DF_SECTION_nodejs='debian'
+df_item_nodejs='nodejs — Node.js 环境 (nvm + 最新版 node/npm)
+     ├─ nvm (~/.nvm, 官方安装器)
+     └─ 最新版 node + npm (nvm install node)'
 df_desc_uv='Astral uv — 极快的 Python 包/项目管理器'
 df_requires_uv=''
 DF_SECTION_uv='debian'
@@ -240,13 +254,11 @@ df_requires_starship=''
 DF_SECTION_starship='debian'
 df_item_starship='starship — Starship 终端提示符 (官方脚本安装到 ~/.local/bin)
      └─ starship'
-df_desc_hexo='Hexo 静态博客框架 (Node.js + hexo-cli)'
-df_requires_hexo=''
+df_desc_hexo='Hexo 静态博客框架 (hexo-cli)'
+df_requires_hexo='nodejs'
 DF_SECTION_hexo='debian'
-df_item_hexo='hexo — Hexo 静态博客框架 (Node.js + hexo-cli)
-     ├─ nodejs
-     ├─ npm
-     └─ hexo-cli'
+df_item_hexo='hexo — Hexo 静态博客框架 (hexo-cli)
+     └─ hexo-cli (npm -g, 经 nvm 的 node)'
 df_desc_cuda_toolkit='NVIDIA CUDA Toolkit (Ubuntu 档案库官方包)'
 df_requires_cuda_toolkit=''
 DF_SECTION_cuda_toolkit='debian'
@@ -272,14 +284,80 @@ df_item_hermes='hermes — Nous Research Hermes Agent (CLI/TUI/gateway, 官方�
      ├─ hermes 命令 (~/.local/bin)
      ├─ 独立运行时: uv + Python 3.14 + Node.js + ripgrep + ffmpeg (~/.hermes)
      └─ agent-browser + 固定 Chromium + cua-driver (默认; 可跳过)'
+df_desc_pi='pi coding agent (badlogic/earendil-works, 官方安装器)'
+df_requires_pi='nodejs'
+DF_SECTION_pi='debian'
+df_item_pi='pi — pi coding agent (badlogic/earendil-works, 官方安装器)
+     ├─ pi (~/.pi/agent/bin, 官方安装器固定依赖版本)
+     └─ 运行时使用 nvm 管理的 Node'
+df_desc_claude_code='Anthropic Claude Code CLI (官方原生安装器)'
+df_requires_claude_code=''
+DF_SECTION_claude_code='debian'
+df_item_claude_code='claude-code — Anthropic Claude Code CLI (官方原生安装器)
+     └─ claude (原生安装到 ~/.local/bin, 免 Node 依赖)'
+df_desc_minimax='MiniMax Code 终端编码智能体 (mcode)'
+df_requires_minimax='nodejs'
+DF_SECTION_minimax='debian'
+df_item_minimax='minimax — MiniMax Code 终端编码智能体 (mcode)
+     └─ @minimax-ai/code -> mcode / mcode-tools'
+df_desc_zcode='ZCode CLI (智谱 GLM 官方终端智能体入口)'
+df_requires_zcode='nodejs'
+DF_SECTION_zcode='debian'
+df_item_zcode='zcode — ZCode CLI (智谱 GLM 官方终端智能体入口)
+     └─ zcode-cli -> zcode'
+df_desc_opencode='opencode 终端编码智能体 (sst, 官方安装器)'
+df_requires_opencode=''
+DF_SECTION_opencode='debian'
+df_item_opencode='opencode — opencode 终端编码智能体 (sst, 官方安装器)
+     └─ opencode (官方安装器到用户目录)'
 cat > "$DF_TMPDIR/script-01.sh" <<'DOTFILE_EOF_1'
+#!/usr/bin/env bash
+# nvm (官方安装器) + 最新版 Node.js。
+# nvm 装到 ~/.nvm 并把初始化写进 ~/.bashrc; 非交互 shell 需自行 source nvm.sh。
+set -euo pipefail
+
+export NVM_DIR="$HOME/.nvm"
+
+# ---- 安装 ----
+# METHOD=script: 用 curl 拉 tarball 而非 git clone (容器里 git 的 GnuTLS 常握手失败, 且少一个依赖)
+echo "==> 安装 nvm"
+curl -fsSL -o- https://raw.githubusercontent.com/nvm-sh/nvm/master/install.sh | METHOD=script bash
+
+# nvm 是 shell 函数, 安装脚本不在交互 shell 里, 需手动加载后才能用
+. "$NVM_DIR/nvm.sh"
+
+echo "==> 安装最新版 Node.js"
+nvm install node
+nvm alias default node
+
+# ---- Verification ----
+nvm use --silent default
+node --version
+npm --version
+DOTFILE_EOF_1
+cat > "$DF_TMPDIR/script-02.sh" <<'DOTFILE_EOF_2'
 #!/usr/bin/env bash
 # Astral uv 官方安装脚本, 装到 ~/.local/bin (无需 root)。
 # 安装器会自动把 ~/.local/bin 写入 shell 配置的 PATH (幂等)。
 set -euo pipefail
+
+# 版本/目录均由官方安装器决定, 本脚本无使用者可调旋钮, 故不设变量。
+# 本脚本全程不需要提权 (落点在 $HOME 下), 无需 sudo 垫片。
+
+echo "==> 运行 Astral uv 官方安装器"
 curl -LsSf https://astral.sh/uv/install.sh | sh
-DOTFILE_EOF_1
-cat > "$DF_TMPDIR/script-02.sh" <<'DOTFILE_EOF_2'
+
+# ---- Verification ----
+# 用意: 安装器把 uv 和 uvx 落在 ~/.local/bin, 但当前 shell 的 PATH 要重开
+# 终端才可能生效, 所以这里用绝对路径直接执行 --version, 确认二进制真的
+# 落地且可运行, 而不是只听安装器自己汇报「装好了」。任何一步失败都由
+# 开头的 set -e 让整个脚本以非零退出。
+echo "==> 验证安装结果"
+"$HOME/.local/bin/uv" --version
+"$HOME/.local/bin/uvx" --version
+echo "已安装: $HOME/.local/bin/uv, $HOME/.local/bin/uvx"
+DOTFILE_EOF_2
+cat > "$DF_TMPDIR/script-03.sh" <<'DOTFILE_EOF_3'
 #!/usr/bin/env bash
 # 配置 Docker 官方 apt 源 (download.docker.com) — 官方推荐的 keyring 方式, deb822 格式。
 # 写法依据官方文档: https://docs.docker.com/engine/install/ubuntu/
@@ -307,11 +385,13 @@ if [ -z "$CODENAME" ]; then
   exit 1
 fi
 
+echo "==> 安装 GPG keyring 到 /etc/apt/keyrings/docker.asc"
 sudo install -m 0755 -d /etc/apt/keyrings
 sudo curl -fsSL "https://download.docker.com/linux/${REPO_ID}/gpg" -o /etc/apt/keyrings/docker.asc
 sudo chmod a+r /etc/apt/keyrings/docker.asc
 
-sudo tee /etc/apt/sources.list.d/docker.sources >/dev/null <<EOF
+echo "==> 写入 deb822 源文件 /etc/apt/sources.list.d/docker.sources"
+sudo tee /etc/apt/sources.list.d/docker.sources <<EOF
 Types: deb
 URIs: https://download.docker.com/linux/${REPO_ID}
 Suites: ${CODENAME}
@@ -320,30 +400,73 @@ Architectures: $(dpkg --print-architecture)
 Signed-By: /etc/apt/keyrings/docker.asc
 EOF
 
+echo "==> apt-get update 刷新索引"
 sudo apt-get update
-DOTFILE_EOF_2
-cat > "$DF_TMPDIR/script-03.sh" <<'DOTFILE_EOF_3'
-#!/usr/bin/env bash
-# Starship 官方安装脚本, 装到用户目录 (无需 root)。
-set -euo pipefail
-mkdir -p "$HOME/.local/bin"
-curl -fsSL https://starship.rs/install.sh | sh -s -- --yes --bin-dir "$HOME/.local/bin"
+
+# ---------------------------------------------------------------------------
+# Verification — 确认脚本到底配置成了什么
+# 用意: 本脚本只配源、不装包, 没有二进制可跑 --version, 验证对象是「源已生效」:
+#   1. keyring 与 deb822 源文件确实落盘且非空;
+#   2. apt-cache policy 查本模块要装的主包 docker-ce, 完整 policy 输出先原样
+#      打印, 再 grep 断言版本表里出现 download.docker.com/linux/${REPO_ID}
+#      的条目 — 即 apt 真的从这个源拿到了 docker-ce 的候选版本。若 suite/
+#      component/arch 配错, update 阶段拿不到该源的 Packages 索引 (apt-get
+#      update 对个别索引失败可能只发 warning 仍以 0 退出, 所以不能只靠它
+#      的退出码), 这里就匹配不到, grep 非零退出, 由开头的 set -e 让整个
+#      脚本失败。grep 命中的源条目直接打印留档, 不吞任何输出。
+echo "==> 验证 Docker 源已生效"
+test -s /etc/apt/keyrings/docker.asc
+test -s /etc/apt/sources.list.d/docker.sources
+POLICY="$(apt-cache policy docker-ce)"
+echo "$POLICY"
+echo "$POLICY" | grep -F "https://download.docker.com/linux/${REPO_ID}"
+echo "已配置: Docker 官方 apt 源 (linux/${REPO_ID}, suite=${CODENAME}, keyring=/etc/apt/keyrings/docker.asc)"
 DOTFILE_EOF_3
 cat > "$DF_TMPDIR/script-04.sh" <<'DOTFILE_EOF_4'
 #!/usr/bin/env bash
-# 全局安装 hexo-cli。
-# npm -g 需要写入系统目录 (/usr/lib/node_modules, /usr/bin):
-# - root (含无 sudo 二进制的容器, 生成器的 sudo 垫片在父 shell, 传不进本子进程): 直接装;
-# - 普通用户: 经 sudo 提权。
+# Starship 官方安装脚本, 装到用户目录 (无需 root)。
 set -euo pipefail
 
-if [ "$(id -u)" = 0 ]; then
-  npm install -g hexo-cli
-else
-  sudo npm install -g hexo-cli
-fi
+DEST="$HOME/.local/bin" # 安装目的地, 下文 mkdir / --bin-dir / 验证三处引用
+
+echo "==> 准备安装目录 $DEST"
+mkdir -p "$DEST"
+
+echo "==> 通过官方安装器安装 starship 到 $DEST"
+curl -fsSL https://starship.rs/install.sh | sh -s -- --yes --bin-dir "$DEST"
+
+# ---------------------------------------------------------------------------
+# Verification — 确认脚本到底装成了什么
+# 用意: starship 被装进用户目录 $DEST, 当前 shell 的 PATH 很可能尚未包含它,
+# 因此按绝对路径直接执行二进制的 --version (不依赖 PATH / command -v 查找)。
+# 若二进制缺失、损坏或架构不符, 该命令非零退出, set -e 让整个脚本失败;
+# 成功则打印版本与落点。本模块没有配置 apt 源, 无需 apt-cache policy 验证。
+echo "==> 验证安装"
+"$DEST/starship" --version
+echo "已安装: $DEST/starship"
 DOTFILE_EOF_4
 cat > "$DF_TMPDIR/script-05.sh" <<'DOTFILE_EOF_5'
+#!/usr/bin/env bash
+# 全局安装 hexo-cli。
+# node/npm 由 nodejs 模块经 nvm 提供 (装在用户目录, npm -g 无需提权);
+# 非交互 shell 不加载 ~/.bashrc, 需手动 source nvm。
+set -euo pipefail
+
+export NVM_DIR="$HOME/.nvm"
+. "$NVM_DIR/nvm.sh"
+nvm use --silent default
+
+echo "==> 全局安装 hexo-cli"
+npm install -g hexo-cli
+
+# --- Verification ---
+# hexo-cli 经 npm -g 安装到 nvm 的用户级 bin (已在上文加入 PATH), 命令名是 hexo。
+# 能打印 hexo-cli / Node 版本即证明安装落点生效、二进制可执行; set -e 兜底。
+echo "==> 验证: hexo version"
+hexo version
+echo "已安装: hexo-cli (npm -g: $(command -v hexo))"
+DOTFILE_EOF_5
+cat > "$DF_TMPDIR/script-06.sh" <<'DOTFILE_EOF_6'
 #!/usr/bin/env bash
 # 配置 Intel oneAPI 官方 apt 源 (官方推荐方式: keyring + signed-by, 取代已废弃的 apt-key)。
 #   密钥: https://apt.repos.intel.com/intel-gpg-keys/GPG-PUB-KEY-INTEL-SW-PRODUCTS.PUB
@@ -357,23 +480,40 @@ if [ "$(id -u)" = 0 ] && ! command -v sudo >/dev/null 2>&1; then
   sudo() { "$@"; }
 fi
 
-KEY_URL="https://apt.repos.intel.com/intel-gpg-keys/GPG-PUB-KEY-INTEL-SW-PRODUCTS.PUB"
 KEYRING="/usr/share/keyrings/oneapi-archive-keyring.gpg"
-LIST="/etc/apt/sources.list.d/oneapi.list"
 
 tmp_pub="$(mktemp)"
 tmp_gpg="$(mktemp)"
 trap 'rm -f "$tmp_pub" "$tmp_gpg"' EXIT
 
-curl -fsSL "$KEY_URL" -o "$tmp_pub"
+echo "==> 下载 Intel GPG 公钥并转为 binary keyring"
+curl -fsSL https://apt.repos.intel.com/intel-gpg-keys/GPG-PUB-KEY-INTEL-SW-PRODUCTS.PUB -o "$tmp_pub"
 gpg --yes --dearmor -o "$tmp_gpg" "$tmp_pub"
 sudo install -m 0644 "$tmp_gpg" "$KEYRING"
-echo "deb [signed-by=${KEYRING}] https://apt.repos.intel.com/oneapi all main" | sudo tee "$LIST" >/dev/null
+
+echo "==> 写入 /etc/apt/sources.list.d/oneapi.list"
+echo "deb [signed-by=${KEYRING}] https://apt.repos.intel.com/oneapi all main" | sudo tee /etc/apt/sources.list.d/oneapi.list
 
 # --allow-releaseinfo-change: Intel 偶尔调整仓库 Label, 重跑时避免交互确认卡死。
+echo "==> apt-get update 刷新包索引"
 sudo apt-get update --allow-releaseinfo-change
-DOTFILE_EOF_5
-cat > "$DF_TMPDIR/script-06.sh" <<'DOTFILE_EOF_6'
+
+# --- Verification ---
+# 本脚本只配源、不装包, 「装成了什么」= Intel 源是否真的被 apt 采纳。apt-get update
+# 跑完只说明网络可达; 真正的判据是 Intel 索引通过了 keyring 签名校验并进入包缓存,
+# 即 apt-cache policy 在 intel-basekit (oneAPI Base Toolkit 元包, 此源必有) 的版本表里
+# 列出 https://apt.repos.intel.com/oneapi 的候选版本。看不到说明 keyring/list 有误,
+# 立即 exit 1 让整条安装链失败, 而不是留下一个看似成功的坏源。
+echo "==> Verification: apt-cache policy intel-basekit"
+policy="$(apt-cache policy intel-basekit)"
+echo "$policy"
+if ! grep -qF 'https://apt.repos.intel.com/oneapi' <<<"$policy"; then
+  echo "错误: apt-cache policy intel-basekit 未看到来自 https://apt.repos.intel.com/oneapi 的候选版本, Intel 源未生效" >&2
+  exit 1
+fi
+echo "已配置: /etc/apt/sources.list.d/oneapi.list (keyring: ${KEYRING})"
+DOTFILE_EOF_6
+cat > "$DF_TMPDIR/script-07.sh" <<'DOTFILE_EOF_7'
 #!/usr/bin/env bash
 # Hermes Agent 官方安装器 (hermes-agent.nousresearch.com)。
 # 源码装到 ~/.hermes/hermes-agent, CLI 包装器放 ~/.local/bin/hermes;
@@ -382,45 +522,143 @@ cat > "$DF_TMPDIR/script-06.sh" <<'DOTFILE_EOF_6'
 # 服务器/容器等无桌面环境可设 HERMES_SKIP_BROWSER=1 跳过这两件。
 set -euo pipefail
 
-args=""
 if [ "${HERMES_SKIP_BROWSER:-0}" = "1" ]; then
-  args="--skip-browser --skip-computer-use"
+  echo "==> 运行 Hermes 官方安装器 (HERMES_SKIP_BROWSER=1: 跳过浏览器工具与 cua-driver)"
+  curl -fsSL https://hermes-agent.nousresearch.com/install.sh | bash -s -- --skip-browser --skip-computer-use
+else
+  echo "==> 运行 Hermes 官方安装器"
+  curl -fsSL https://hermes-agent.nousresearch.com/install.sh | bash -s --
 fi
-# shellcheck disable=SC2086
-curl -fsSL https://hermes-agent.nousresearch.com/install.sh | bash -s -- $args
-DOTFILE_EOF_6
+
+# ---- Verification ----
+# 用意: 安装动作全在 curl|bash 进来的官方安装器里, 本段验证它到底装成了什么 —
+# 用绝对路径调 CLI 包装器, 不依赖安装器刚写进 shell 配置的 PATH 在本进程生效。
+# `hermes --version` 报的是安装检出的源码版本, 能正常输出即证明包装器
+# (~/.local/bin/hermes)、源码检出 (~/.hermes/hermes-agent) 与其自带运行时
+# (uv/Python/Node) 链路完整; 它附带的更新检查自带网络超时, 离线也能正常退出。
+# 验证失败由 set -e 兜底, 让整个安装脚本失败。
+"$HOME/.local/bin/hermes" --version
+echo "已安装: $HOME/.local/bin/hermes (源码与运行时: $HOME/.hermes/hermes-agent)"
+DOTFILE_EOF_7
+cat > "$DF_TMPDIR/script-08.sh" <<'DOTFILE_EOF_8'
+#!/usr/bin/env bash
+# pi coding agent 官方安装器 (pi.dev), 需要前置 Node 22.19+ (由 nodejs 模块经 nvm 提供)。
+# 安装到 ~/.pi/agent/bin, 自带固定版本依赖, pi update 自升级。
+set -euo pipefail
+
+# nvm 管理的 node 不在非交互 shell 的 PATH 里, 手动加载
+export NVM_DIR="$HOME/.nvm"
+. "$NVM_DIR/nvm.sh"
+nvm use --silent default
+
+# ---- 安装 ----
+echo "==> 安装 pi coding agent"
+curl -fsSL https://pi.dev/install.sh | sh
+
+# ---- Verification ----
+# pi 安装到 ~/.pi/agent/bin (安装器输出的 PATH 提示为准)
+"$HOME/.pi/agent/bin/pi" --version
+DOTFILE_EOF_8
+cat > "$DF_TMPDIR/script-09.sh" <<'DOTFILE_EOF_9'
+#!/usr/bin/env bash
+# Anthropic Claude Code 官方原生安装器 (claude.ai/install.sh)。
+# 安装到 ~/.local/bin/claude, 不依赖 Node.js; 装完运行 claude 后 /login 认证。
+set -euo pipefail
+
+# ---- 安装 ----
+echo "==> 安装 Claude Code (原生安装器)"
+curl -fsSL https://claude.ai/install.sh | bash
+
+# ---- Verification ----
+"$HOME/.local/bin/claude" --version
+DOTFILE_EOF_9
+cat > "$DF_TMPDIR/script-10.sh" <<'DOTFILE_EOF_10'
+#!/usr/bin/env bash
+# MiniMax Code CLI (npm: @minimax-ai/code), 提供 mcode / mcode-tools 命令。
+# node/npm 由 nodejs 模块经 nvm 提供, 非交互 shell 需手动加载。
+set -euo pipefail
+
+export NVM_DIR="$HOME/.nvm"
+. "$NVM_DIR/nvm.sh"
+nvm use --silent default
+
+# ---- 安装 ----
+npm install -g @minimax-ai/code
+
+# ---- Verification ----
+mcode --version
+DOTFILE_EOF_10
+cat > "$DF_TMPDIR/script-11.sh" <<'DOTFILE_EOF_11'
+#!/usr/bin/env bash
+# ZCode CLI (npm: zcode-cli), GLM 模型的官方终端智能体入口。
+# node/npm 由 nodejs 模块经 nvm 提供, 非交互 shell 需手动加载。
+set -euo pipefail
+
+export NVM_DIR="$HOME/.nvm"
+. "$NVM_DIR/nvm.sh"
+nvm use --silent default
+
+# ---- 安装 ----
+npm install -g zcode-cli
+
+# ---- Verification ----
+zcode-cli --version
+DOTFILE_EOF_11
+cat > "$DF_TMPDIR/script-12.sh" <<'DOTFILE_EOF_12'
+#!/usr/bin/env bash
+# opencode 官方安装器 (opencode.ai)。
+set -euo pipefail
+
+# ---- 安装 ----
+echo "==> 安装 opencode"
+curl -fsSL https://opencode.ai/install | bash
+
+# ---- Verification ----
+# opencode 安装到 ~/.opencode/bin (安装器输出为准)
+"$HOME/.opencode/bin/opencode" --version
+DOTFILE_EOF_12
 df_mod_essentials() {
   df_step 'sudo apt-get install -y htop tree curl jq'
 }
 df_mod_git() {
   df_step 'sudo apt-get install -y git'
 }
+df_mod_buildenv() {
+  df_step 'sudo apt-get install -y build-essential gcc llvm clang make cmake ninja-build'
+  df_step 'gcc --version | head -1'
+  df_step 'clang --version | head -1'
+  df_step 'cmake --version | head -1'
+  df_step 'ninja --version'
+}
+df_mod_nodejs() {
+  df_step 'sudo apt-get install -y curl ca-certificates libatomic1'
+  df_step_embed "$DF_TMPDIR/script-01.sh" './scripts/install-nvm.sh'
+}
 df_mod_uv() {
   df_step 'sudo apt-get install -y curl ca-certificates'
-  df_step_embed "$DF_TMPDIR/script-01.sh" './scripts/install.sh'
+  df_step_embed "$DF_TMPDIR/script-02.sh" './scripts/install.sh'
 }
 df_mod_neovim() {
   df_step 'sudo apt-get install -y neovim ripgrep fd-find curl'
 }
 df_mod_docker() {
   df_step 'sudo apt-get install -y curl ca-certificates gnupg'
-  df_step_embed "$DF_TMPDIR/script-02.sh" './scripts/setup-docker-repo.sh'
+  df_step_embed "$DF_TMPDIR/script-03.sh" './scripts/setup-docker-repo.sh'
   df_step 'sudo apt-get install -y docker-ce docker-ce-cli containerd.io docker-buildx-plugin docker-compose-plugin'
 }
 df_mod_starship() {
   df_step 'sudo apt-get install -y curl'
-  df_step_embed "$DF_TMPDIR/script-03.sh" './scripts/install.sh'
+  df_step_embed "$DF_TMPDIR/script-04.sh" './scripts/install.sh'
 }
 df_mod_hexo() {
-  df_step 'sudo apt-get install -y nodejs npm'
-  df_step_embed "$DF_TMPDIR/script-04.sh" './scripts/install-hexo.sh'
+  df_step_embed "$DF_TMPDIR/script-05.sh" './scripts/install-hexo.sh'
 }
 df_mod_cuda_toolkit() {
   df_step 'sudo apt-get install -y cuda-toolkit'
 }
 df_mod_oneapi() {
   df_step 'sudo apt-get install -y curl gnupg'
-  df_step_embed "$DF_TMPDIR/script-05.sh" './scripts/setup-intel-repo.sh'
+  df_step_embed "$DF_TMPDIR/script-06.sh" './scripts/setup-intel-repo.sh'
   df_step 'sudo apt-get install -y intel-oneapi-compiler-dpcpp-cpp'
 }
 df_mod_rocm() {
@@ -428,7 +666,24 @@ df_mod_rocm() {
 }
 df_mod_hermes() {
   df_step 'sudo apt-get install -y curl git tar libatomic1'
-  df_step_embed "$DF_TMPDIR/script-06.sh" './scripts/install.sh'
+  df_step_embed "$DF_TMPDIR/script-07.sh" './scripts/install.sh'
+}
+df_mod_pi() {
+  df_step_embed "$DF_TMPDIR/script-08.sh" './scripts/install.sh'
+}
+df_mod_claude_code() {
+  df_step 'sudo apt-get install -y curl ca-certificates'
+  df_step_embed "$DF_TMPDIR/script-09.sh" './scripts/install.sh'
+}
+df_mod_minimax() {
+  df_step_embed "$DF_TMPDIR/script-10.sh" './scripts/install.sh'
+}
+df_mod_zcode() {
+  df_step_embed "$DF_TMPDIR/script-11.sh" './scripts/install.sh'
+}
+df_mod_opencode() {
+  df_step 'sudo apt-get install -y curl ca-certificates'
+  df_step_embed "$DF_TMPDIR/script-12.sh" './scripts/install.sh'
 }
 
 
