@@ -278,16 +278,16 @@ DF_SECTION_rocm='debian'
 df_item_rocm='rocm — AMD ROCm (Ubuntu 档案库官方包; 26.04 为 rocm 7.1 元包, 旧目标为 hipcc/rocminfo 5.7 组件)
      ├─ rocm 元包 (26.04: 7.1)
      └─ hipcc / rocminfo / rocm-smi (旧目标: 5.7)'
-df_desc_agentharness='Agent CLI 全家桶, 统一收纳到 ~/.agentharness/<工具名>/'
+df_desc_agentharness='Agent CLI 全家桶 (npm 全局安装; hermes 走官方安装器收在 ~/.agentharness)'
 df_requires_agentharness='nodejs git'
 DF_SECTION_agentharness='debian'
-df_item_agentharness='agentharness — Agent CLI 全家桶, 统一收纳到 ~/.agentharness/<工具名>/
+df_item_agentharness='agentharness — Agent CLI 全家桶 (npm 全局安装; hermes 走官方安装器收在 ~/.agentharness)
      ├─ claude (@anthropic-ai/claude-code)
      ├─ pi (@earendil-works/pi-coding-agent)
      ├─ mcode (@minimax-ai/code)
      ├─ zcode-cli
      ├─ opencode (opencode-ai)
-     └─ hermes (官方安装器, HERMES_HOME)'
+     └─ hermes (官方安装器, HERMES_HOME=~/.agentharness/hermes)'
 cat > "$DF_TMPDIR/script-01.sh" <<'DOTFILE_EOF_1'
 #!/usr/bin/env bash
 # nvm (官方安装器) + 最新版 Node.js。
@@ -547,19 +547,16 @@ df_mod_rocm() {
   df_step 'hipcc --version | head -3'
 }
 df_mod_agentharness() {
-  df_step '. $HOME/.nvm/nvm.sh && nvm use --silent default && npm install -g --prefix $HOME/.agentharness/claude @anthropic-ai/claude-code'
-  df_step '. $HOME/.nvm/nvm.sh && nvm use --silent default && npm install -g --ignore-scripts --prefix $HOME/.agentharness/pi @earendil-works/pi-coding-agent'
-  df_step '. $HOME/.nvm/nvm.sh && nvm use --silent default && npm install -g --prefix $HOME/.agentharness/minimax @minimax-ai/code'
-  df_step '. $HOME/.nvm/nvm.sh && nvm use --silent default && npm install -g --prefix $HOME/.agentharness/zcode zcode-cli'
-  df_step '. $HOME/.nvm/nvm.sh && nvm use --silent default && npm install -g --prefix $HOME/.agentharness/opencode opencode-ai'
+  df_step '. $HOME/.nvm/nvm.sh && nvm use --silent default && npm install -g @anthropic-ai/claude-code @minimax-ai/code zcode-cli opencode-ai'
+  df_step '. $HOME/.nvm/nvm.sh && nvm use --silent default && npm install -g --ignore-scripts @earendil-works/pi-coding-agent'
   df_step 'sudo apt-get install -y curl ca-certificates && curl -fsSL https://hermes-agent.nousresearch.com/install.sh | HERMES_HOME=$HOME/.agentharness/hermes bash'
   df_step 'mkdir -p $HOME/.agentharness/hermes/bin && mv $HOME/.local/bin/hermes $HOME/.agentharness/hermes/bin/hermes'
   df_step '$HOME/.agentharness/hermes/bin/hermes pm repair'
-  df_step '$HOME/.agentharness/claude/bin/claude --version | head -1'
-  df_step '$HOME/.agentharness/pi/bin/pi --version | head -1'
-  df_step '$HOME/.agentharness/minimax/bin/mcode --version | head -1'
-  df_step '$HOME/.agentharness/zcode/bin/zcode-cli --version | head -1'
-  df_step '$HOME/.agentharness/opencode/bin/opencode --version | head -1'
+  df_step '. $HOME/.nvm/nvm.sh && nvm use --silent default && claude --version | head -1'
+  df_step '. $HOME/.nvm/nvm.sh && nvm use --silent default && pi --version | head -1'
+  df_step '. $HOME/.nvm/nvm.sh && nvm use --silent default && mcode --version | head -1'
+  df_step '. $HOME/.nvm/nvm.sh && nvm use --silent default && zcode-cli --version | head -1'
+  df_step '. $HOME/.nvm/nvm.sh && nvm use --silent default && opencode --version | head -1'
   df_step '$HOME/.agentharness/hermes/bin/hermes --version | head -1'
 }
 
