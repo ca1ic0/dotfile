@@ -200,28 +200,16 @@ df_step_embed() {  # $1=脚本临时路径 $2=展示名
 }
 
 # ---- 模块注册表 (生成) ----------------------------------------------------
-DF_MODULES=(essentials git buildenv nodejs uv neovim docker starship hexo cuda-toolkit oneapi rocm agentharness)
-df_desc_essentials='常用 CLI 工具'
-df_requires_essentials=''
-DF_SECTION_essentials='fedora'
-df_item_essentials='essentials — 常用 CLI 工具
-     ├─ htop
-     ├─ tree
-     ├─ curl
-     └─ jq'
-df_desc_git='Git 版本控制'
-df_requires_git=''
-DF_SECTION_git='fedora'
-df_item_git='git — Git 版本控制
-     └─ git'
-df_desc_buildenv='编译工具链 (gcc/llvm/clang/cmake/ninja)'
-df_requires_buildenv=''
-DF_SECTION_buildenv='fedora'
-df_item_buildenv='buildenv — 编译工具链 (gcc/llvm/clang/cmake/ninja)
+DF_MODULES=(base nodejs uv docker hexo cuda-toolkit oneapi rocm agentharness)
+df_desc_base='基础环境: 常用 CLI (htop/btop/tree/jq/gdu) + git + 编译工具链'
+df_requires_base=''
+DF_SECTION_base='fedora'
+df_item_base='base — 基础环境: 常用 CLI (htop/btop/tree/jq/gdu) + git + 编译工具链
+     ├─ htop / btop / tree / curl / jq / gdu
+     ├─ git
      ├─ build-essential (gcc/g++/make)
      ├─ llvm + clang
-     ├─ cmake
-     └─ ninja'
+     └─ cmake + ninja'
 df_desc_nodejs='Node.js 环境 (nvm + 最新版 node/npm)'
 df_requires_nodejs=''
 DF_SECTION_nodejs='fedora'
@@ -232,14 +220,7 @@ df_desc_uv='Astral uv — 极快的 Python 包/项目管理器'
 df_requires_uv=''
 DF_SECTION_uv='fedora'
 df_item_uv='uv — Astral uv — 极快的 Python 包/项目管理器
-     └─ uv + uvx'
-df_desc_neovim='Neovim 编辑器 + 常用依赖'
-df_requires_neovim=''
-DF_SECTION_neovim='fedora'
-df_item_neovim='neovim — Neovim 编辑器 + 常用依赖
-     ├─ neovim
-     ├─ ripgrep
-     └─ fd (fdfind 兼容链接)'
+     └─ uv + uvx (~/.local/bin, 免 root)'
 df_desc_docker='Docker Engine (官方离线包一次性安装, 不注册第三方源)'
 df_requires_docker=''
 DF_SECTION_docker='fedora'
@@ -249,18 +230,13 @@ df_item_docker='docker — Docker Engine (官方离线包一次性安装, 不注
      ├─ containerd.io
      ├─ docker-buildx-plugin
      └─ docker-compose-plugin'
-df_desc_starship='Starship 终端提示符 (官方脚本安装到 ~/.local/bin)'
-df_requires_starship=''
-DF_SECTION_starship='fedora'
-df_item_starship='starship — Starship 终端提示符 (官方脚本安装到 ~/.local/bin)
-     └─ starship'
 df_desc_hexo='Hexo 静态博客框架 (hexo-cli)'
 df_requires_hexo='nodejs'
 DF_SECTION_hexo='fedora'
 df_item_hexo='hexo — Hexo 静态博客框架 (hexo-cli)
      └─ hexo-cli (npm -g, 经 nvm 的 node)'
 df_desc_cuda_toolkit='NVIDIA CUDA Toolkit (Ubuntu 档案库官方包; 26.04 为 cuda-toolkit 13.x 元包, 旧目标为 nvidia-cuda-toolkit; Fedora 走 NVIDIA 官方源临时仓库)'
-df_requires_cuda_toolkit='buildenv'
+df_requires_cuda_toolkit='base'
 DF_SECTION_cuda_toolkit='fedora'
 df_item_cuda_toolkit='cuda-toolkit — NVIDIA CUDA Toolkit (Ubuntu 档案库官方包; 26.04 为 cuda-toolkit 13.x 元包, 旧目标为 nvidia-cuda-toolkit; Fedora 走 NVIDIA 官方源临时仓库)
      ├─ cuda-toolkit 元包 (26.04, 跟随最新 13.x)
@@ -280,7 +256,7 @@ df_item_rocm='rocm — AMD ROCm (Ubuntu/Fedora 档案库官方包; 26.04 为 roc
      ├─ rocm 元包 (26.04: 7.1)
      └─ hipcc / rocminfo / rocm-smi (旧目标: 5.7)'
 df_desc_agentharness='Agent CLI 全家桶 (npm 全局安装; hermes 走官方安装器收在 ~/.agentharness)'
-df_requires_agentharness='nodejs git'
+df_requires_agentharness='nodejs base'
 DF_SECTION_agentharness='fedora'
 df_item_agentharness='agentharness — Agent CLI 全家桶 (npm 全局安装; hermes 走官方安装器收在 ~/.agentharness)
      ├─ claude (@anthropic-ai/claude-code)
@@ -303,12 +279,16 @@ echo "==> 安装 nvm $NVM_VERSION"
 # METHOD=script: 用 curl 拉 tarball 而非 git clone (容器里 git 的 GnuTLS 常握手失败, 且少一个依赖)
 curl -fsSL -o- "https://raw.githubusercontent.com/nvm-sh/nvm/$NVM_VERSION/install.sh" | METHOD=script bash
 
-# nvm 是 shell 函数, 安装脚本不在交互 shell 里, 需手动加载后才能用
+# nvm 是 shell 函数, 安装脚本不在交互 shell 里, 需手动加载后才能用;
+# 其函数体内存在未定义变量路径 (如远程索引不可达时的版本解析), set -u 会在
+# 函数调用时误杀 (STABLE: unbound variable) — 整个 nvm 交互区临时关闭 -u
+set +u
 . "$NVM_DIR/nvm.sh"
 
 echo "==> 安装最新版 Node.js"
 nvm install node
 nvm alias default node
+set -u
 
 # ---- Verification ----
 # node/npm 由本进程 nvm use 挂上 PATH, 失败由 set -e 拦截; 成功打印实际落点。
@@ -318,85 +298,14 @@ node --version
 npm --version
 echo "已安装: $(command -v node) ($(node --version))"
 DOTFILE_EOF_1
-cat > "$DF_TMPDIR/script-02.sh" <<'DOTFILE_EOF_2'
-#!/usr/bin/env bash
-# Astral uv 官方安装脚本, 装到 ~/.local/bin (无需 root)。
-# 安装器会自动把 ~/.local/bin 写入 shell 配置的 PATH (幂等)。
-set -euo pipefail
-
-# 版本/目录均由官方安装器决定, 本脚本无使用者可调旋钮, 故不设变量。
-# 本脚本全程不需要提权 (落点在 $HOME 下), 无需 sudo 垫片。
-
-echo "==> 运行 Astral uv 官方安装器"
-curl -LsSf https://astral.sh/uv/install.sh | sh
-
-# ---- Verification ----
-# 用意: 安装器把 uv 和 uvx 落在 ~/.local/bin, 但当前 shell 的 PATH 要重开
-# 终端才可能生效, 所以这里用绝对路径直接执行 --version, 确认二进制真的
-# 落地且可运行, 而不是只听安装器自己汇报「装好了」。任何一步失败都由
-# 开头的 set -e 让整个脚本以非零退出。
-echo "==> 验证安装结果"
-"$HOME/.local/bin/uv" --version
-"$HOME/.local/bin/uvx" --version
-echo "已安装: $HOME/.local/bin/uv, $HOME/.local/bin/uvx"
-DOTFILE_EOF_2
-cat > "$DF_TMPDIR/script-03.sh" <<'DOTFILE_EOF_3'
-#!/usr/bin/env bash
-# Starship 官方安装脚本, 装到用户目录 (无需 root)。
-set -euo pipefail
-
-DEST="$HOME/.local/bin" # 安装目的地, 下文 mkdir / --bin-dir / 验证三处引用
-
-echo "==> 准备安装目录 $DEST"
-mkdir -p "$DEST"
-
-echo "==> 通过官方安装器安装 starship 到 $DEST"
-curl -fsSL https://starship.rs/install.sh | sh -s -- --yes --bin-dir "$DEST"
-
-# ---------------------------------------------------------------------------
-# Verification — 确认脚本到底装成了什么
-# 用意: starship 被装进用户目录 $DEST, 当前 shell 的 PATH 很可能尚未包含它,
-# 因此按绝对路径直接执行二进制的 --version (不依赖 PATH / command -v 查找)。
-# 若二进制缺失、损坏或架构不符, 该命令非零退出, set -e 让整个脚本失败;
-# 成功则打印版本与落点。本模块没有配置 apt 源, 无需 apt-cache policy 验证。
-echo "==> 验证安装"
-"$DEST/starship" --version
-echo "已安装: $DEST/starship"
-DOTFILE_EOF_3
-cat > "$DF_TMPDIR/script-04.sh" <<'DOTFILE_EOF_4'
-#!/usr/bin/env bash
-# 全局安装 hexo-cli。
-# node/npm 由 nodejs 模块经 nvm 提供 (装在用户目录, npm -g 无需提权);
-# 非交互 shell 不加载 ~/.bashrc, 需手动 source nvm。
-set -euo pipefail
-
-export NVM_DIR="$HOME/.nvm"
-. "$NVM_DIR/nvm.sh"
-nvm use --silent default
-
-echo "==> 全局安装 hexo-cli"
-npm install -g hexo-cli
-
-# --- Verification ---
-# hexo-cli 经 npm -g 安装到 nvm 的用户级 bin (已在上文加入 PATH), 命令名是 hexo。
-# 能打印 hexo-cli / Node 版本即证明安装落点生效、二进制可执行; set -e 兜底。
-echo "==> 验证: hexo version"
-hexo version
-echo "已安装: hexo-cli (npm -g: $(command -v hexo))"
-DOTFILE_EOF_4
-df_mod_essentials() {
-  df_step 'sudo dnf install -y htop tree curl jq'
-  df_step 'htop --version | head -1'
-  df_step 'jq --version'
-  df_step 'tree --version | head -1'
-  df_step 'curl --version | head -1'
-}
-df_mod_git() {
-  df_step 'sudo dnf install -y git'
+df_mod_base() {
+  df_step 'sudo dnf install -y git htop btop tree curl jq gdu gcc gcc-c++ make llvm clang cmake ninja-build'
   df_step 'git --version'
-}
-df_mod_buildenv() {
-  df_step 'sudo dnf install -y gcc gcc-c++ make llvm clang cmake ninja-build'
+  df_step 'htop --version | head -1'
+  df_step 'btop --version'
+  df_step 'tree --version | head -1'
+  df_step 'jq --version'
+  df_step 'gdu --version'
   df_step 'gcc --version | head -1'
   df_step 'clang --version | head -1'
   df_step 'cmake --version | head -1'
@@ -408,13 +317,9 @@ df_mod_nodejs() {
 }
 df_mod_uv() {
   df_step 'sudo dnf install -y curl ca-certificates'
-  df_step_embed "$DF_TMPDIR/script-02.sh" './scripts/install.sh'
-}
-df_mod_neovim() {
-  df_step 'sudo dnf install -y neovim ripgrep fd-find curl'
-  df_step 'nvim --version | head -1'
-  df_step 'rg --version | head -1'
-  df_step 'fd --version | head -1'
+  df_step 'curl -LsSf https://astral.sh/uv/install.sh | sh'
+  df_step '$HOME/.local/bin/uv --version'
+  df_step '$HOME/.local/bin/uvx --version'
 }
 df_mod_docker() {
   df_step 'sudo rpm --import https://download.docker.com/linux/fedora/gpg'
@@ -425,12 +330,9 @@ df_mod_docker() {
   df_step 'docker buildx version'
   df_step 'docker compose version'
 }
-df_mod_starship() {
-  df_step 'sudo dnf install -y curl'
-  df_step_embed "$DF_TMPDIR/script-03.sh" './scripts/install.sh'
-}
 df_mod_hexo() {
-  df_step_embed "$DF_TMPDIR/script-04.sh" './scripts/install-hexo.sh'
+  df_step '. $HOME/.nvm/nvm.sh && nvm use --silent default && npm install -g hexo-cli'
+  df_step '. $HOME/.nvm/nvm.sh && nvm use --silent default && hexo version | head -3'
 }
 df_mod_cuda_toolkit() {
   df_step 'sudo rpmkeys --import https://developer.download.nvidia.com/compute/cuda/repos/fedora44/x86_64/73CD9B30.pub'
