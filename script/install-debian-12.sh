@@ -200,7 +200,7 @@ df_step_embed() {  # $1=脚本临时路径 $2=展示名
 }
 
 # ---- 模块注册表 (生成) ----------------------------------------------------
-DF_MODULES=(essentials git buildenv nodejs uv neovim docker starship hexo cuda-toolkit oneapi rocm hermes pi claude-code minimax zcode opencode)
+DF_MODULES=(essentials git buildenv nodejs uv neovim docker starship hexo cuda-toolkit oneapi rocm agentharness)
 df_desc_essentials='常用 CLI 工具'
 df_requires_essentials=''
 DF_SECTION_essentials='debian'
@@ -277,39 +277,16 @@ DF_SECTION_rocm='debian'
 df_item_rocm='rocm — AMD ROCm (Ubuntu 档案库官方包)
      ├─ rocm 元包 (7.1)
      └─ hipcc / rocminfo / HIP 运行时'
-df_desc_hermes='Nous Research Hermes Agent (CLI/TUI/gateway, 官方安装器)'
-df_requires_hermes=''
-DF_SECTION_hermes='debian'
-df_item_hermes='hermes — Nous Research Hermes Agent (CLI/TUI/gateway, 官方安装器)
-     ├─ hermes 命令 (~/.local/bin)
-     ├─ 独立运行时: uv + Python 3.14 + Node.js + ripgrep + ffmpeg (~/.hermes)
-     └─ agent-browser + 固定 Chromium + cua-driver (默认; 可跳过)'
-df_desc_pi='pi coding agent (badlogic/earendil-works, 官方安装器)'
-df_requires_pi='nodejs'
-DF_SECTION_pi='debian'
-df_item_pi='pi — pi coding agent (badlogic/earendil-works, 官方安装器)
-     ├─ pi (~/.pi/agent/bin, 官方安装器固定依赖版本)
-     └─ 运行时使用 nvm 管理的 Node'
-df_desc_claude_code='Anthropic Claude Code CLI (官方原生安装器)'
-df_requires_claude_code=''
-DF_SECTION_claude_code='debian'
-df_item_claude_code='claude-code — Anthropic Claude Code CLI (官方原生安装器)
-     └─ claude (原生安装到 ~/.local/bin, 免 Node 依赖)'
-df_desc_minimax='MiniMax Code 终端编码智能体 (mcode)'
-df_requires_minimax='nodejs'
-DF_SECTION_minimax='debian'
-df_item_minimax='minimax — MiniMax Code 终端编码智能体 (mcode)
-     └─ @minimax-ai/code -> mcode / mcode-tools'
-df_desc_zcode='ZCode CLI (智谱 GLM 官方终端智能体入口)'
-df_requires_zcode='nodejs'
-DF_SECTION_zcode='debian'
-df_item_zcode='zcode — ZCode CLI (智谱 GLM 官方终端智能体入口)
-     └─ zcode-cli -> zcode'
-df_desc_opencode='opencode 终端编码智能体 (sst, 官方安装器)'
-df_requires_opencode=''
-DF_SECTION_opencode='debian'
-df_item_opencode='opencode — opencode 终端编码智能体 (sst, 官方安装器)
-     └─ opencode (官方安装器到用户目录)'
+df_desc_agentharness='Agent CLI 全家桶, 统一收纳到 ~/.agentharness/<工具名>/'
+df_requires_agentharness='nodejs'
+DF_SECTION_agentharness='debian'
+df_item_agentharness='agentharness — Agent CLI 全家桶, 统一收纳到 ~/.agentharness/<工具名>/
+     ├─ claude (@anthropic-ai/claude-code)
+     ├─ pi (@earendil-works/pi-coding-agent)
+     ├─ mcode (@minimax-ai/code)
+     ├─ zcode-cli
+     ├─ opencode (opencode-ai)
+     └─ hermes (官方安装器, HERMES_HOME)'
 cat > "$DF_TMPDIR/script-01.sh" <<'DOTFILE_EOF_1'
 #!/usr/bin/env bash
 # nvm (官方安装器) + 最新版 Node.js。
@@ -513,110 +490,6 @@ if ! grep -qF 'https://apt.repos.intel.com/oneapi' <<<"$policy"; then
 fi
 echo "已配置: /etc/apt/sources.list.d/oneapi.list (keyring: ${KEYRING})"
 DOTFILE_EOF_6
-cat > "$DF_TMPDIR/script-07.sh" <<'DOTFILE_EOF_7'
-#!/usr/bin/env bash
-# Hermes Agent 官方安装器 (hermes-agent.nousresearch.com)。
-# 源码装到 ~/.hermes/hermes-agent, CLI 包装器放 ~/.local/bin/hermes;
-# 安装器自带固定版 uv/Python/Node/ripgrep/ffmpeg, 不与系统冲突。
-# 默认同时安装浏览器工具 (agent-browser + 固定 Chromium) 与 cua-driver;
-# 服务器/容器等无桌面环境可设 HERMES_SKIP_BROWSER=1 跳过这两件。
-set -euo pipefail
-
-if [ "${HERMES_SKIP_BROWSER:-0}" = "1" ]; then
-  echo "==> 运行 Hermes 官方安装器 (HERMES_SKIP_BROWSER=1: 跳过浏览器工具与 cua-driver)"
-  curl -fsSL https://hermes-agent.nousresearch.com/install.sh | bash -s -- --skip-browser --skip-computer-use
-else
-  echo "==> 运行 Hermes 官方安装器"
-  curl -fsSL https://hermes-agent.nousresearch.com/install.sh | bash -s --
-fi
-
-# ---- Verification ----
-# 用意: 安装动作全在 curl|bash 进来的官方安装器里, 本段验证它到底装成了什么 —
-# 用绝对路径调 CLI 包装器, 不依赖安装器刚写进 shell 配置的 PATH 在本进程生效。
-# `hermes --version` 报的是安装检出的源码版本, 能正常输出即证明包装器
-# (~/.local/bin/hermes)、源码检出 (~/.hermes/hermes-agent) 与其自带运行时
-# (uv/Python/Node) 链路完整; 它附带的更新检查自带网络超时, 离线也能正常退出。
-# 验证失败由 set -e 兜底, 让整个安装脚本失败。
-"$HOME/.local/bin/hermes" --version
-echo "已安装: $HOME/.local/bin/hermes (源码与运行时: $HOME/.hermes/hermes-agent)"
-DOTFILE_EOF_7
-cat > "$DF_TMPDIR/script-08.sh" <<'DOTFILE_EOF_8'
-#!/usr/bin/env bash
-# pi coding agent 官方安装器 (pi.dev), 需要前置 Node 22.19+ (由 nodejs 模块经 nvm 提供)。
-# 安装到 ~/.pi/agent/bin, 自带固定版本依赖, pi update 自升级。
-set -euo pipefail
-
-# nvm 管理的 node 不在非交互 shell 的 PATH 里, 手动加载
-export NVM_DIR="$HOME/.nvm"
-. "$NVM_DIR/nvm.sh"
-nvm use --silent default
-
-# ---- 安装 ----
-echo "==> 安装 pi coding agent"
-curl -fsSL https://pi.dev/install.sh | sh
-
-# ---- Verification ----
-# pi 安装到 ~/.pi/agent/bin (安装器输出的 PATH 提示为准)
-"$HOME/.pi/agent/bin/pi" --version
-DOTFILE_EOF_8
-cat > "$DF_TMPDIR/script-09.sh" <<'DOTFILE_EOF_9'
-#!/usr/bin/env bash
-# Anthropic Claude Code 官方原生安装器 (claude.ai/install.sh)。
-# 安装到 ~/.local/bin/claude, 不依赖 Node.js; 装完运行 claude 后 /login 认证。
-set -euo pipefail
-
-# ---- 安装 ----
-echo "==> 安装 Claude Code (原生安装器)"
-curl -fsSL https://claude.ai/install.sh | bash
-
-# ---- Verification ----
-"$HOME/.local/bin/claude" --version
-DOTFILE_EOF_9
-cat > "$DF_TMPDIR/script-10.sh" <<'DOTFILE_EOF_10'
-#!/usr/bin/env bash
-# MiniMax Code CLI (npm: @minimax-ai/code), 提供 mcode / mcode-tools 命令。
-# node/npm 由 nodejs 模块经 nvm 提供, 非交互 shell 需手动加载。
-set -euo pipefail
-
-export NVM_DIR="$HOME/.nvm"
-. "$NVM_DIR/nvm.sh"
-nvm use --silent default
-
-# ---- 安装 ----
-npm install -g @minimax-ai/code
-
-# ---- Verification ----
-mcode --version
-DOTFILE_EOF_10
-cat > "$DF_TMPDIR/script-11.sh" <<'DOTFILE_EOF_11'
-#!/usr/bin/env bash
-# ZCode CLI (npm: zcode-cli), GLM 模型的官方终端智能体入口。
-# node/npm 由 nodejs 模块经 nvm 提供, 非交互 shell 需手动加载。
-set -euo pipefail
-
-export NVM_DIR="$HOME/.nvm"
-. "$NVM_DIR/nvm.sh"
-nvm use --silent default
-
-# ---- 安装 ----
-npm install -g zcode-cli
-
-# ---- Verification ----
-zcode-cli --version
-DOTFILE_EOF_11
-cat > "$DF_TMPDIR/script-12.sh" <<'DOTFILE_EOF_12'
-#!/usr/bin/env bash
-# opencode 官方安装器 (opencode.ai)。
-set -euo pipefail
-
-# ---- 安装 ----
-echo "==> 安装 opencode"
-curl -fsSL https://opencode.ai/install | bash
-
-# ---- Verification ----
-# opencode 安装到 ~/.opencode/bin (安装器输出为准)
-"$HOME/.opencode/bin/opencode" --version
-DOTFILE_EOF_12
 df_mod_essentials() {
   df_step 'sudo apt-get install -y htop tree curl jq'
 }
@@ -664,26 +537,21 @@ df_mod_oneapi() {
 df_mod_rocm() {
   df_step 'sudo apt-get install -y --no-install-recommends rocm'
 }
-df_mod_hermes() {
-  df_step 'sudo apt-get install -y curl git tar libatomic1'
-  df_step_embed "$DF_TMPDIR/script-07.sh" './scripts/install.sh'
-}
-df_mod_pi() {
-  df_step_embed "$DF_TMPDIR/script-08.sh" './scripts/install.sh'
-}
-df_mod_claude_code() {
-  df_step 'sudo apt-get install -y curl ca-certificates'
-  df_step_embed "$DF_TMPDIR/script-09.sh" './scripts/install.sh'
-}
-df_mod_minimax() {
-  df_step_embed "$DF_TMPDIR/script-10.sh" './scripts/install.sh'
-}
-df_mod_zcode() {
-  df_step_embed "$DF_TMPDIR/script-11.sh" './scripts/install.sh'
-}
-df_mod_opencode() {
-  df_step 'sudo apt-get install -y curl ca-certificates'
-  df_step_embed "$DF_TMPDIR/script-12.sh" './scripts/install.sh'
+df_mod_agentharness() {
+  df_step '. $HOME/.nvm/nvm.sh && nvm use --silent default && npm install -g --prefix $HOME/.agentharness/claude @anthropic-ai/claude-code'
+  df_step '. $HOME/.nvm/nvm.sh && nvm use --silent default && npm install -g --ignore-scripts --prefix $HOME/.agentharness/pi @earendil-works/pi-coding-agent'
+  df_step '. $HOME/.nvm/nvm.sh && nvm use --silent default && npm install -g --prefix $HOME/.agentharness/minimax @minimax-ai/code'
+  df_step '. $HOME/.nvm/nvm.sh && nvm use --silent default && npm install -g --prefix $HOME/.agentharness/zcode zcode-cli'
+  df_step '. $HOME/.nvm/nvm.sh && nvm use --silent default && npm install -g --prefix $HOME/.agentharness/opencode opencode-ai'
+  df_step 'sudo apt-get install -y curl ca-certificates && curl -fsSL https://hermes-agent.nousresearch.com/install.sh | HERMES_HOME=$HOME/.agentharness/hermes bash'
+  df_step 'mkdir -p $HOME/.agentharness/hermes/bin && mv $HOME/.local/bin/hermes $HOME/.agentharness/hermes/bin/hermes'
+  df_step '$HOME/.agentharness/hermes/bin/hermes pm repair'
+  df_step '$HOME/.agentharness/claude/bin/claude --version | head -1'
+  df_step '$HOME/.agentharness/pi/bin/pi --version | head -1'
+  df_step '$HOME/.agentharness/minimax/bin/mcode --version | head -1'
+  df_step '$HOME/.agentharness/zcode/bin/zcode-cli --version | head -1'
+  df_step '$HOME/.agentharness/opencode/bin/opencode --version | head -1'
+  df_step '$HOME/.agentharness/hermes/bin/hermes --version | head -1'
 }
 
 
