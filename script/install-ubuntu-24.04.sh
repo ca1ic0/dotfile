@@ -247,25 +247,24 @@ df_item_hexo='hexo — Hexo 静态博客框架 (Node.js + hexo-cli)
      ├─ nodejs
      ├─ npm
      └─ hexo-cli'
-df_desc_cuda_toolkit='NVIDIA CUDA Toolkit'
+df_desc_cuda_toolkit='NVIDIA CUDA Toolkit (Ubuntu 档案库官方包)'
 df_requires_cuda_toolkit=''
 DF_SECTION_cuda_toolkit='debian'
-df_item_cuda_toolkit='cuda-toolkit — NVIDIA CUDA Toolkit
-     ├─ cuda-toolkit-13 (nvcc + 开发库 + 工具, 不含 GPU 驱动)
-     └─ cuda-keyring (NVIDIA CUDA 网络源)'
+df_item_cuda_toolkit='cuda-toolkit — NVIDIA CUDA Toolkit (Ubuntu 档案库官方包)
+     ├─ cuda-toolkit 元包 (跟随最新 13.x)
+     └─ nvcc + 开发库 + 工具, 不含 GPU 驱动'
 df_desc_oneapi='Intel oneAPI 工具链 (DPC++/icx)'
 df_requires_oneapi=''
 DF_SECTION_oneapi='debian'
 df_item_oneapi='oneapi — Intel oneAPI 工具链 (DPC++/icx)
      ├─ oneAPI apt 源 (apt.repos.intel.com/oneapi, GPG keyring + signed-by)
      └─ intel-oneapi-compiler-dpcpp-cpp -> icx / icpx / DPC++ (2026.x, 约 1 GiB 下载)'
-df_desc_rocm='AMD ROCm (HIP 运行时与编译器, 官方 repo.radeon.com 源)'
+df_desc_rocm='AMD ROCm (Ubuntu 档案库官方包)'
 df_requires_rocm=''
 DF_SECTION_rocm='debian'
-df_item_rocm='rocm — AMD ROCm (HIP 运行时与编译器, 官方 repo.radeon.com 源)
-     ├─ rocm-hip-runtime → hip-runtime-amd / hsa-rocr / comgr / rocminfo
-     ├─ hipcc + hip-dev → rocm-llvm (HIP 编译器与头文件)
-     └─ /opt/rocm (PATH 经 /etc/profile.d/rocm.sh)'
+df_item_rocm='rocm — AMD ROCm (Ubuntu 档案库官方包)
+     ├─ rocm 元包 (7.1)
+     └─ hipcc / rocminfo / HIP 运行时'
 df_desc_hermes='Nous Research Hermes Agent (CLI/TUI/gateway, 官方安装器)'
 df_requires_hermes=''
 DF_SECTION_hermes='debian'
@@ -346,74 +345,6 @@ fi
 DOTFILE_EOF_4
 cat > "$DF_TMPDIR/script-05.sh" <<'DOTFILE_EOF_5'
 #!/usr/bin/env bash
-# 配置 NVIDIA CUDA 网络源 — 官方 cuda-keyring 包方式。
-# 相比手工 gpg --dearmor, keyring 包一步安装三样东西:
-#   /usr/share/keyrings/cuda-archive-keyring.gpg          (签名密钥)
-#   /etc/apt/sources.list.d/cuda-<distro>-<arch>.list     (网络源条目)
-#   /etc/apt/preferences.d/cuda-repository-pin-600        (apt pin, 防止遮蔽发行版包)
-#
-# 行为:
-#   1. 由 /etc/os-release 推导 NVIDIA 仓库名 (ubuntu 26.04 -> ubuntu2604, debian 12 -> debian12)
-#   2. 探测仓库是否存在, 不存在则回落 ubuntu2404 (NVIDIA 对新发行版上架可能滞后)
-#   3. 从仓库索引挑最新 cuda-keyring_*_all.deb 安装 (写死版本号会在升级后 404)
-#   4. apt-get update, 让 NVIDIA 源里的 cuda-toolkit 元包对后续步骤可见
-set -euo pipefail
-
-# root 且无 sudo 的环境 (容器常见): 透传 — 嵌入脚本跑在子进程里,
-# 生成器主脚本的 sudo 垫片传不进来, 需自带同款
-if [ "$(id -u)" = 0 ] && ! command -v sudo >/dev/null 2>&1; then
-  sudo() { "$@"; }
-fi
-
-NV_BASE="https://developer.download.nvidia.com/compute/cuda/repos"
-
-# NVIDIA 仓库目录用自有架构名, 与 dpkg 不同: amd64 -> x86_64, arm64 -> sbsa
-case "$(dpkg --print-architecture)" in
-  amd64) arch="x86_64" ;;
-  arm64) arch="sbsa" ;;
-  *) arch="$(dpkg --print-architecture)" ;;
-esac
-
-# 1) 发行版 -> NVIDIA 仓库名 (linuxmint/pop 与 ubuntu 同源, 版本对不上会走下面的回落)
-. /etc/os-release
-repo_distro=""
-case "${ID:-}" in
-  ubuntu | linuxmint | pop)
-    repo_distro="ubuntu${VERSION_ID%%.*}${VERSION_ID#*.}"   # 26.04 -> ubuntu2604
-    ;;
-  debian)
-    repo_distro="debian${VERSION_ID%%.*}"                    # 12 -> debian12
-    ;;
-esac
-
-# 2) 仓库存在性校验 + 回落
-#    注意必须 -L: 该 CDN 对不存在的路径回 301 (跳转到加斜杠的 404), 不跟随会误判为可用
-repo_ok() { curl -fsSIL --max-time 20 "$NV_BASE/$1/$arch/Release" >/dev/null 2>&1; }
-if [ -z "$repo_distro" ] || ! repo_ok "$repo_distro"; then
-  echo "==> NVIDIA CUDA 源 ${repo_distro:-<未知>} 不可用, 回落 ubuntu2404" >&2
-  repo_distro="ubuntu2404"
-  repo_ok "$repo_distro" || { echo "错误: 回落源 $NV_BASE/$repo_distro/$arch 也不可达" >&2; exit 1; }
-fi
-repo_url="$NV_BASE/$repo_distro/$arch"
-echo "==> 使用 CUDA 网络源: $repo_url"
-
-# 3) 安装最新 cuda-keyring 包
-tmpdir="$(mktemp -d)"
-trap 'rm -rf "$tmpdir"' EXIT
-deb_name="$(curl -fsSL "$repo_url/" | grep -oE 'cuda-keyring_[0-9][0-9A-Za-z.+~_-]*_all\.deb' | sort -uV | tail -n 1)"
-if [ -z "$deb_name" ]; then
-  echo "错误: 在 $repo_url/ 索引里找不到 cuda-keyring 包" >&2
-  exit 1
-fi
-echo "==> 安装 $deb_name"
-curl -fsSL "$repo_url/$deb_name" -o "$tmpdir/cuda-keyring.deb"
-sudo dpkg -i "$tmpdir/cuda-keyring.deb"
-
-# 4) 刷新元数据, 让 NVIDIA 源里的包可见
-sudo apt-get update
-DOTFILE_EOF_5
-cat > "$DF_TMPDIR/script-06.sh" <<'DOTFILE_EOF_6'
-#!/usr/bin/env bash
 # 配置 Intel oneAPI 官方 apt 源 (官方推荐方式: keyring + signed-by, 取代已废弃的 apt-key)。
 #   密钥: https://apt.repos.intel.com/intel-gpg-keys/GPG-PUB-KEY-INTEL-SW-PRODUCTS.PUB
 #   源:   deb [signed-by=...] https://apt.repos.intel.com/oneapi all main
@@ -441,119 +372,8 @@ echo "deb [signed-by=${KEYRING}] https://apt.repos.intel.com/oneapi all main" | 
 
 # --allow-releaseinfo-change: Intel 偶尔调整仓库 Label, 重跑时避免交互确认卡死。
 sudo apt-get update --allow-releaseinfo-change
-DOTFILE_EOF_6
-cat > "$DF_TMPDIR/script-07.sh" <<'DOTFILE_EOF_7'
-#!/usr/bin/env bash
-# 配置 AMD ROCm 官方用户态 apt 源 (repo.radeon.com/rocm)。
-#
-# ROCm 用户态仓库只按 Ubuntu LTS 代号发布套件 (2026-10 时: jammy=22.04 / noble=24.04)。
-# 更新的发行版 (如 26.04 resolute) 尚无专属套件 —— 该仓库是纯用户态二进制,
-# 依赖 glibc 向后兼容, 回落到 noble 即可; 探测逻辑对将来新增的代号同样自适应。
-# (内核态驱动 amdgpu-dkms 走另一仓库 repo.radeon.com/amdgpu, 容器/CI 无需。)
-set -euo pipefail
-
-REPO_URL="https://repo.radeon.com/rocm/apt/debian"
-KEY_URL="https://repo.radeon.com/rocm/rocm.gpg.key"
-# 套件探测次序: 本机代号优先, 之后按 新 → 旧 回落
-FALLBACK_SUITES="noble jammy"
-
-SUDO=""
-[ "$(id -u)" = 0 ] || SUDO="sudo"
-
-# 本机代号 (ubuntu: noble/resolute...; debian: bookworm/trixie...)
-. /etc/os-release
-CODENAME="${VERSION_CODENAME:-}"
-
-pick_suite() {
-  local s
-  for s in "$CODENAME" $FALLBACK_SUITES; do
-    [ -n "$s" ] || continue
-    if command -v curl >/dev/null 2>&1 \
-       && curl -fsSI --max-time 20 "$REPO_URL/dists/$s/Release" >/dev/null 2>&1; then
-      echo "$s"
-      return 0
-    fi
-  done
-  # 探测不了 (离线/无 curl) 时按 2026-10 的仓库现状给缺省
-  echo noble
-}
-SUITE="$(pick_suite)"
-
-# 密钥为 ASCII armored 格式, apt >= 2.4 (jammy+) 的 signed-by 可直接引用, 无需 gpg 反装甲
-$SUDO install -m 0755 -d /etc/apt/keyrings
-KEYFILE="$(mktemp)"
-trap 'rm -f "$KEYFILE"' EXIT
-curl -fsSL "$KEY_URL" -o "$KEYFILE"
-$SUDO install -m 0644 "$KEYFILE" /etc/apt/keyrings/rocm.asc
-
-echo "deb [arch=amd64 signed-by=/etc/apt/keyrings/rocm.asc] $REPO_URL $SUITE main" \
-  | $SUDO tee /etc/apt/sources.list.d/rocm.list >/dev/null
-
-# Ubuntu 26.04+ 的 universe 自带 ROCm 包 (rocminfo/hipcc 等, 版本号高于 AMD 仓库的),
-# 会顶掉候选并打断 AMD 元包的精确版本依赖 (=x.y.z)。把 repo.radeon.com 钉到 1000
-# (>=1000 允许降级), 保证 AMD 官方包始终优先; 不影响其它来源的包。
-$SUDO tee /etc/apt/preferences.d/rocm > /dev/null <<'ROCM_PIN'
-Package: *
-Pin: origin "repo.radeon.com"
-Pin-Priority: 1000
-ROCM_PIN
-
-echo "已配置 ROCm apt 源: suite=$SUITE (本机代号: ${CODENAME:-未知})"
-DOTFILE_EOF_7
-cat > "$DF_TMPDIR/script-08.sh" <<'DOTFILE_EOF_8'
-#!/usr/bin/env bash
-# ROCm 链接器兼容垫片 (仅 noble 回落环境需要; 依赖完整时零动作)。
-#
-# 背景: AMD 仓库目前只发布 22.04/24.04 套件, 更新的发行版回落用 noble 的包
-# (见 setup-rocm-repo.sh)。其中 rocm-llvm 的 lld 在 24.04 上构建, 运行期依赖
-# libxml2.so.2 (连带 libicuuc.so.74); Ubuntu 26.04 把 libxml2 升到 soname 16
-# 且不再提供旧运行库, 于是 hipcc 编译任何含 device code 的源文件都会在
-# amdgcn-link 阶段报 "libxml2.so.2: cannot open shared object file"。
-#
-# 处理: 从 Ubuntu 官方 pool 解包 (dpkg-deb -x, 不安装包) 这两组运行库到
-# /usr/lib/x86_64-linux-gnu —— 与 soname 16 的新 libxml2 同机共存, 无侵入。
-# 垫片属于尽力而为: 下载失败只告警不阻断安装 (hipcc/rocminfo 二进制不受影响)。
-set -euo pipefail
-
-LIBDIR=/usr/lib/x86_64-linux-gnu
-XML2_DEB="https://archive.ubuntu.com/ubuntu/pool/main/libx/libxml2/libxml2_2.9.14+dfsg-1.3ubuntu3_amd64.deb"
-ICU_DEB="https://archive.ubuntu.com/ubuntu/pool/main/i/icu/libicu74_74.2-1ubuntu3.1_amd64.deb"
-
-LLD="/opt/rocm/lib/llvm/bin/lld"
-[ -x "$LLD" ] || { echo "rocm: 未找到 $LLD, 跳过链接器兼容检查"; exit 0; }
-
-if ! ldd "$LLD" 2>/dev/null | grep -q 'libxml2.so.2.*not found'; then
-  echo "rocm: 链接器依赖完整 (libxml2.so.2 可用), 无需兼容垫片"
-  exit 0
-fi
-
-SUDO=""
-[ "$(id -u)" = 0 ] || SUDO="sudo"
-TMP="$(mktemp -d)"
-trap 'rm -rf "$TMP"' EXIT
-
-fetch_extract() {  # $1=deb URL  $2=要拷贝的文件 glob
-  local name; name="$(basename "$1")"
-  curl -fsSL --retry 2 -o "$TMP/$name" "$1" \
-    || { echo "rocm 兼容垫片: 下载失败 $name (跳过)" >&2; return 1; }
-  dpkg-deb -x "$TMP/$name" "$TMP/x" || return 1
-  $SUDO cp -a "$TMP"/x"$LIBDIR"/$2 "$LIBDIR"/ || return 1
-}
-
-# shellcheck disable=SC2015
-fetch_extract "$XML2_DEB" 'libxml2.so.2*' \
-  && fetch_extract "$ICU_DEB" 'libicu*.so.74*' \
-  && $SUDO ldconfig \
-  || { echo "rocm 兼容垫片: 未能补齐 libxml2.so.2/libicu74 — hipcc 编译 device code 可能失败 (hipcc/rocminfo 二进制不受影响)" >&2; exit 0; }
-
-if ldd "$LLD" 2>/dev/null | grep -q 'not found'; then
-  echo "rocm 兼容垫片: 补齐后 lld 仍缺库:" >&2
-  ldd "$LLD" 2>/dev/null | grep 'not found' >&2 || true
-  exit 0
-fi
-echo "rocm: 已补齐 lld 运行库 (libxml2.so.2 + libicu74), hipcc 链接可用"
-DOTFILE_EOF_8
-cat > "$DF_TMPDIR/script-09.sh" <<'DOTFILE_EOF_9'
+DOTFILE_EOF_5
+cat > "$DF_TMPDIR/script-06.sh" <<'DOTFILE_EOF_6'
 #!/usr/bin/env bash
 # Hermes Agent 官方安装器 (hermes-agent.nousresearch.com)。
 # 源码装到 ~/.hermes/hermes-agent, CLI 包装器放 ~/.local/bin/hermes;
@@ -568,7 +388,7 @@ if [ "${HERMES_SKIP_BROWSER:-0}" = "1" ]; then
 fi
 # shellcheck disable=SC2086
 curl -fsSL https://hermes-agent.nousresearch.com/install.sh | bash -s -- $args
-DOTFILE_EOF_9
+DOTFILE_EOF_6
 df_mod_essentials() {
   df_step 'sudo apt-get install -y htop tree curl jq'
 }
@@ -596,26 +416,19 @@ df_mod_hexo() {
   df_step_embed "$DF_TMPDIR/script-04.sh" './scripts/install-hexo.sh'
 }
 df_mod_cuda_toolkit() {
-  df_step 'sudo apt-get install -y curl'
-  df_step_embed "$DF_TMPDIR/script-05.sh" './scripts/setup-nvidia-repo.sh'
-  df_step 'sudo apt-get install -y cuda-toolkit-13'
+  df_step 'sudo apt-get install -y cuda-toolkit'
 }
 df_mod_oneapi() {
   df_step 'sudo apt-get install -y curl gnupg'
-  df_step_embed "$DF_TMPDIR/script-06.sh" './scripts/setup-intel-repo.sh'
+  df_step_embed "$DF_TMPDIR/script-05.sh" './scripts/setup-intel-repo.sh'
   df_step 'sudo apt-get install -y intel-oneapi-compiler-dpcpp-cpp'
 }
 df_mod_rocm() {
-  df_step 'sudo apt-get install -y curl ca-certificates'
-  df_step_embed "$DF_TMPDIR/script-07.sh" './scripts/setup-rocm-repo.sh'
-  df_step 'sudo apt-get update'
-  df_step 'sudo apt-get install -y --no-install-recommends rocm-hip-runtime hipcc hip-dev'
-  df_step_embed "$DF_TMPDIR/script-08.sh" './scripts/fix-lld-deps.sh'
-  df_step 'echo '\''export PATH=/opt/rocm/bin:$PATH'\'' | sudo tee /etc/profile.d/rocm.sh >/dev/null'
+  df_step 'sudo apt-get install -y --no-install-recommends rocm'
 }
 df_mod_hermes() {
   df_step 'sudo apt-get install -y curl git tar libatomic1'
-  df_step_embed "$DF_TMPDIR/script-09.sh" './scripts/install.sh'
+  df_step_embed "$DF_TMPDIR/script-06.sh" './scripts/install.sh'
 }
 
 
