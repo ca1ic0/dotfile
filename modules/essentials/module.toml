@@ -6,4 +6,11 @@ order = 10
 content = ["htop", "tree", "curl", "jq"]
 
 [debian]
-install = "sudo apt-get install -y htop tree curl jq"
+install = [
+  "sudo apt-get update -qq",
+  "sudo apt-get install -y htop tree curl jq",
+  "htop --version | head -1",
+  "jq --version",
+  "tree --version | head -1",
+  "curl --version | head -1",
+]

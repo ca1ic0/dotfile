@@ -4,7 +4,7 @@ description = "Astral uv — 极快的 Python 包/项目管理器"
 groups = ["dev"]
 order = 15
 requires = []
-content = ["uv"]
+content = ["uv + uvx"]
 
 [debian]
 install = [

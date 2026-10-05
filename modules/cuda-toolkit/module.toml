@@ -1,10 +1,19 @@
 [module]
 name = "cuda-toolkit"
-description = "NVIDIA CUDA Toolkit (Ubuntu 档案库官方包)"
+description = "NVIDIA CUDA Toolkit (Ubuntu 档案库官方包; 26.04 为 cuda-toolkit 13.x 元包, 旧目标为 nvidia-cuda-toolkit)"
 groups = ["gpu"]
 order = 40
-requires = []
-content = ["cuda-toolkit 元包 (跟随最新 13.x)", "nvcc + 开发库 + 工具, 不含 GPU 驱动"]
+requires = ["buildenv"]
+content = ["cuda-toolkit 元包 (26.04, 跟随最新 13.x)", "nvidia-cuda-toolkit (24.04/22.04/debian12)", "nvcc + 开发库 + 工具, 不含 GPU 驱动"]
+
+["ubuntu@26.04"]
+install = [
+  "sudo apt-get install -y cuda-toolkit",
+  "/usr/local/cuda/bin/nvcc --version | tail -2",
+]
 
 [debian]
-install = "sudo apt-get install -y cuda-toolkit"
+install = [
+  "sudo apt-get install -y nvidia-cuda-toolkit",
+  "nvcc --version | tail -2",
+]

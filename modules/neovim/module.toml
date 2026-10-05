@@ -3,7 +3,13 @@ name = "neovim"
 description = "Neovim 编辑器 + 常用依赖"
 groups = ["dev"]
 order = 20
-content = ["neovim", "ripgrep", "fd-find"]
+content = ["neovim", "ripgrep", "fd (fdfind 兼容链接)"]
 
 [debian]
-install = "sudo apt-get install -y neovim ripgrep fd-find curl"
+install = [
+  "sudo apt-get install -y neovim ripgrep fd-find curl",
+  "sudo ln -sf /usr/bin/fdfind /usr/local/bin/fd",
+  "nvim --version | head -1",
+  "rg --version | head -1",
+  "fd --version | head -1",
+]

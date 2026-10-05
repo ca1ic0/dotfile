@@ -3,7 +3,8 @@ name = "agentharness"
 description = "Agent CLI 全家桶, 统一收纳到 ~/.agentharness/<工具名>/"
 groups = ["agentharness"]
 order = 46
-requires = ["nodejs"]
+requires = ["nodejs", "git"]
+# 注: zcode-cli 的 npm 包为社区维护 (v0.0.1, 官方站点仅发布桌面端), 官方性存疑但可用
 content = ["claude (@anthropic-ai/claude-code)", "pi (@earendil-works/pi-coding-agent)", "mcode (@minimax-ai/code)", "zcode-cli", "opencode (opencode-ai)", "hermes (官方安装器, HERMES_HOME)"]
 
 [debian]

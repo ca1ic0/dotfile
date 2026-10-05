@@ -1,14 +1,13 @@
 [module]
 name = "docker"
-description = "Docker Engine (官方 apt 源)"
+description = "Docker Engine (官方 .deb 离线安装, 不注册第三方源)"
 groups = ["dev"]
 order = 25
 requires = []
 content = ["docker-ce", "docker-ce-cli", "containerd.io", "docker-buildx-plugin", "docker-compose-plugin"]
 
-[debian]                     # ubuntu@26.04 经 family 回落命中 [debian]
+[debian]
 install = [
-  "sudo apt-get install -y curl ca-certificates gnupg",
-  "./scripts/setup-docker-repo.sh",
-  "sudo apt-get install -y docker-ce docker-ce-cli containerd.io docker-buildx-plugin docker-compose-plugin",
+  "sudo apt-get install -y curl ca-certificates",
+  "./scripts/install-docker-debs.sh",
 ]

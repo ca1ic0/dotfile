@@ -141,6 +141,9 @@ install = "sudo pacman -S --needed --noconfirm docker"
 - **Upstream First**: 安装通道选上游推荐的方式 — 先查官方文档列出的通道;
   多通道时选与布局目标一致的那条; 发行版档案库优先于厂商第三方源
   (写脚本前先 `apt-cache policy`)。详见 `~/.agents/skills/install-script/SKILL.md`
+- **第三方仓库软件离线优先**: 需要加第三方源才能装的, 优先改为直接下载产物
+  一次性安装 (.deb + `apt-get install ./pkg.deb`、tarball、独立安装器), 不给
+  系统长期注册厂商源; 仅当上游离线形式不可行才退回仓库形式并注明
 - **一个软件包一个模块一个路径**: 功能内聚的一组软件就写成一个 module.toml
   (如 agentharness: 六个 agent CLI 一个文件、几行 npm), 统一收纳在一个根
   路径下 (`~/.agentharness/<工具名>/`)。优先用上游环境变量或 npm `--prefix`

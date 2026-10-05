@@ -101,7 +101,10 @@ class TestRenderE2E(unittest.TestCase):
         self.assertIn("REGISTRY_OK", r.stdout)
 
     def test_no_symlink_and_delim_unique(self):
-        self.assertNotIn("ln -s", self.script_all)
+        # 禁 dotfile 部署型软链 (目标指向 $HOME); 系统级二进制名兼容链接允许 (如 fdfind->fd)
+        for line in self.script_all.splitlines():
+            if line.lstrip().startswith(("ln -s", "sudo ln -s")):
+                self.assertNotIn("$HOME", line, f"HOME 内不允许软链: {line}")
         delims = [ln for ln in self.script_all.splitlines() if ln.startswith("DOTFILE_EOF_")]
         self.assertEqual(len(delims), len(set(delims)), "heredoc 定界符必须唯一")
 

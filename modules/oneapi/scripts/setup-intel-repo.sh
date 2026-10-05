@@ -32,14 +32,14 @@ sudo apt-get update --allow-releaseinfo-change
 # --- Verification ---
 # 本脚本只配源、不装包, 「装成了什么」= Intel 源是否真的被 apt 采纳。apt-get update
 # 跑完只说明网络可达; 真正的判据是 Intel 索引通过了 keyring 签名校验并进入包缓存,
-# 即 apt-cache policy 在 intel-basekit (oneAPI Base Toolkit 元包, 此源必有) 的版本表里
+# 即 apt-cache policy 在 intel-basekit (本模块要装的主包) 的版本表里
 # 列出 https://apt.repos.intel.com/oneapi 的候选版本。看不到说明 keyring/list 有误,
 # 立即 exit 1 让整条安装链失败, 而不是留下一个看似成功的坏源。
-echo "==> Verification: apt-cache policy intel-basekit"
-policy="$(apt-cache policy intel-basekit)"
+echo "==> Verification: apt-cache policy intel-oneapi-compiler-dpcpp-cpp"
+policy="$(apt-cache policy intel-oneapi-compiler-dpcpp-cpp)"
 echo "$policy"
 if ! grep -qF 'https://apt.repos.intel.com/oneapi' <<<"$policy"; then
-  echo "错误: apt-cache policy intel-basekit 未看到来自 https://apt.repos.intel.com/oneapi 的候选版本, Intel 源未生效" >&2
+  echo "错误: apt-cache policy intel-oneapi-compiler-dpcpp-cpp 未看到来自 https://apt.repos.intel.com/oneapi 的候选版本, Intel 源未生效" >&2
   exit 1
 fi
 echo "已配置: /etc/apt/sources.list.d/oneapi.list (keyring: ${KEYRING})"
