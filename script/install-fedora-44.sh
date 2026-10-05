@@ -3,8 +3,8 @@
 # 生成命令: ./dotfile.py gen --all
 set -Eeuo pipefail
 
-EXPECTED_ID="ubuntu"
-EXPECTED_VERSION="22.04"
+EXPECTED_ID="fedora"
+EXPECTED_VERSION="44"
 
 df_usage() {
   echo "用法: bash $0 [--dry-run] [--yes] [--no-tui] [--force]"
@@ -86,7 +86,7 @@ df_ensure_curl() {
   command -v curl >/dev/null 2>&1 && return 0
   local df_s=""
   [ "$(id -u)" = 0 ] || df_s="sudo"
-  case "debian" in
+  case "redhat" in
     debian) $df_s apt-get update -qq </dev/null; $df_s apt-get install -y curl </dev/null ;;
     redhat) $df_s dnf install -y curl ;;
     arch)   $df_s pacman -Sy --noconfirm curl ;;
@@ -134,8 +134,8 @@ else
   fi
 fi
 
-export DOTFILES_DISTRO="ubuntu@22.04"
-export DOTFILES_FAMILY="debian"
+export DOTFILES_DISTRO="fedora@44"
+export DOTFILES_FAMILY="redhat"
 
 DF_TUI_PROG=0
 DF_TUI_SEL=0
@@ -203,7 +203,7 @@ df_step_embed() {  # $1=脚本临时路径 $2=展示名
 DF_MODULES=(essentials git buildenv nodejs uv neovim docker starship hexo cuda-toolkit oneapi rocm agentharness)
 df_desc_essentials='常用 CLI 工具'
 df_requires_essentials=''
-DF_SECTION_essentials='debian'
+DF_SECTION_essentials='fedora'
 df_item_essentials='essentials — 常用 CLI 工具
      ├─ htop
      ├─ tree
@@ -211,12 +211,12 @@ df_item_essentials='essentials — 常用 CLI 工具
      └─ jq'
 df_desc_git='Git 版本控制'
 df_requires_git=''
-DF_SECTION_git='debian'
+DF_SECTION_git='fedora'
 df_item_git='git — Git 版本控制
      └─ git'
 df_desc_buildenv='编译工具链 (gcc/llvm/clang/cmake/ninja)'
 df_requires_buildenv=''
-DF_SECTION_buildenv='debian'
+DF_SECTION_buildenv='fedora'
 df_item_buildenv='buildenv — 编译工具链 (gcc/llvm/clang/cmake/ninja)
      ├─ build-essential (gcc/g++/make)
      ├─ llvm + clang
@@ -224,25 +224,25 @@ df_item_buildenv='buildenv — 编译工具链 (gcc/llvm/clang/cmake/ninja)
      └─ ninja'
 df_desc_nodejs='Node.js 环境 (nvm + 最新版 node/npm)'
 df_requires_nodejs=''
-DF_SECTION_nodejs='debian'
+DF_SECTION_nodejs='fedora'
 df_item_nodejs='nodejs — Node.js 环境 (nvm + 最新版 node/npm)
      ├─ nvm (~/.nvm, 官方安装器)
      └─ 最新版 node + npm (nvm install node)'
 df_desc_uv='Astral uv — 极快的 Python 包/项目管理器'
 df_requires_uv=''
-DF_SECTION_uv='debian'
+DF_SECTION_uv='fedora'
 df_item_uv='uv — Astral uv — 极快的 Python 包/项目管理器
      └─ uv + uvx'
 df_desc_neovim='Neovim 编辑器 + 常用依赖'
 df_requires_neovim=''
-DF_SECTION_neovim='debian'
+DF_SECTION_neovim='fedora'
 df_item_neovim='neovim — Neovim 编辑器 + 常用依赖
      ├─ neovim
      ├─ ripgrep
      └─ fd (fdfind 兼容链接)'
 df_desc_docker='Docker Engine (官方离线包一次性安装, 不注册第三方源)'
 df_requires_docker=''
-DF_SECTION_docker='debian'
+DF_SECTION_docker='fedora'
 df_item_docker='docker — Docker Engine (官方离线包一次性安装, 不注册第三方源)
      ├─ docker-ce
      ├─ docker-ce-cli
@@ -251,17 +251,17 @@ df_item_docker='docker — Docker Engine (官方离线包一次性安装, 不注
      └─ docker-compose-plugin'
 df_desc_starship='Starship 终端提示符 (官方脚本安装到 ~/.local/bin)'
 df_requires_starship=''
-DF_SECTION_starship='debian'
+DF_SECTION_starship='fedora'
 df_item_starship='starship — Starship 终端提示符 (官方脚本安装到 ~/.local/bin)
      └─ starship'
 df_desc_hexo='Hexo 静态博客框架 (hexo-cli)'
 df_requires_hexo='nodejs'
-DF_SECTION_hexo='debian'
+DF_SECTION_hexo='fedora'
 df_item_hexo='hexo — Hexo 静态博客框架 (hexo-cli)
      └─ hexo-cli (npm -g, 经 nvm 的 node)'
 df_desc_cuda_toolkit='NVIDIA CUDA Toolkit (Ubuntu 档案库官方包; 26.04 为 cuda-toolkit 13.x 元包, 旧目标为 nvidia-cuda-toolkit; Fedora 走 NVIDIA 官方源临时仓库)'
 df_requires_cuda_toolkit='buildenv'
-DF_SECTION_cuda_toolkit='debian'
+DF_SECTION_cuda_toolkit='fedora'
 df_item_cuda_toolkit='cuda-toolkit — NVIDIA CUDA Toolkit (Ubuntu 档案库官方包; 26.04 为 cuda-toolkit 13.x 元包, 旧目标为 nvidia-cuda-toolkit; Fedora 走 NVIDIA 官方源临时仓库)
      ├─ cuda-toolkit 元包 (26.04, 跟随最新 13.x)
      ├─ nvidia-cuda-toolkit (24.04/22.04/debian12)
@@ -269,19 +269,19 @@ df_item_cuda_toolkit='cuda-toolkit — NVIDIA CUDA Toolkit (Ubuntu 档案库官�
      └─ nvcc + 开发库 + 工具, 不含 GPU 驱动'
 df_desc_oneapi='Intel oneAPI 工具链 (DPC++/icx; 官方 apt/yum 仓 — 上游无单组件离线形式, 离线全家桶数 GB, 按约定退回仓库形式)'
 df_requires_oneapi=''
-DF_SECTION_oneapi='debian'
+DF_SECTION_oneapi='fedora'
 df_item_oneapi='oneapi — Intel oneAPI 工具链 (DPC++/icx; 官方 apt/yum 仓 — 上游无单组件离线形式, 离线全家桶数 GB, 按约定退回仓库形式)
      ├─ oneAPI 官方源 (apt: keyring+signed-by 常驻 / dnf: repofrompath 一次性)
      └─ intel-oneapi-compiler-dpcpp-cpp -> icx / icpx / DPC++ (2026.x, 约 1 GiB 下载)'
 df_desc_rocm='AMD ROCm (Ubuntu/Fedora 档案库官方包; 26.04 为 rocm 7.1 元包, 旧目标为 hipcc/rocminfo 5.7 组件)'
 df_requires_rocm=''
-DF_SECTION_rocm='debian'
+DF_SECTION_rocm='fedora'
 df_item_rocm='rocm — AMD ROCm (Ubuntu/Fedora 档案库官方包; 26.04 为 rocm 7.1 元包, 旧目标为 hipcc/rocminfo 5.7 组件)
      ├─ rocm 元包 (26.04: 7.1)
      └─ hipcc / rocminfo / rocm-smi (旧目标: 5.7)'
 df_desc_agentharness='Agent CLI 全家桶 (npm 全局安装; hermes 走官方安装器收在 ~/.agentharness)'
 df_requires_agentharness='nodejs git'
-DF_SECTION_agentharness='debian'
+DF_SECTION_agentharness='fedora'
 df_item_agentharness='agentharness — Agent CLI 全家桶 (npm 全局安装; hermes 走官方安装器收在 ~/.agentharness)
      ├─ claude (@anthropic-ai/claude-code)
      ├─ pi (@earendil-works/pi-coding-agent)
@@ -342,64 +342,6 @@ echo "已安装: $HOME/.local/bin/uv, $HOME/.local/bin/uvx"
 DOTFILE_EOF_2
 cat > "$DF_TMPDIR/script-03.sh" <<'DOTFILE_EOF_3'
 #!/usr/bin/env bash
-# Docker Engine 离线安装: 直取官方 .deb 一次性安装, 不给系统注册第三方源
-# (软件添加约定: 第三方仓库软件离线优先; 官方 "Install from a package" 通道)。
-# 从 download.docker.com 的 Packages 索引解析五个组件各自最新的 .deb,
-# apt-get install ./*.deb 让依赖由发行版官方库解析。
-set -euo pipefail
-
-# root 且无 sudo 二进制的环境 (容器常见): 透传 — 子进程里主脚本垫片不可见
-if [ "$(id -u)" = 0 ] && ! command -v sudo >/dev/null 2>&1; then
-  sudo() { "$@"; }
-fi
-
-. /etc/os-release   # 本脚本在子进程执行, 主脚本的 os-release 变量传不进来, 必须自行加载
-
-BASE="https://download.docker.com/linux"
-case "${ID:-}" in
-  debian) REPO="$BASE/debian" ;;
-  *)      REPO="$BASE/ubuntu" ;;
-esac
-SUITE="${UBUNTU_CODENAME:-$VERSION_CODENAME}"
-if [ -z "$SUITE" ]; then
-  echo "错误: 无法从 /etc/os-release 取得发行版代号" >&2
-  exit 1
-fi
-
-TMP="$(mktemp -d)"
-trap 'rm -rf "$TMP"' EXIT
-
-# ---- 安装: 解析索引并下载五个组件的最新 .deb ----
-INDEX="$TMP/Packages.gz"
-curl -fsSL "$REPO/dists/$SUITE/stable/binary-amd64/Packages.gz" -o "$INDEX"
-
-# 索引按版本升序排列, 逐包取其最后一个 Filename 即最新版
-for pkg in docker-ce docker-ce-cli containerd.io docker-buildx-plugin docker-compose-plugin; do
-  deb="$(gunzip -c "$INDEX" | awk -v p="$pkg" '
-    $1 == "Package:" { cur = $2 }
-    $1 == "Filename:" && cur == p { fn = $2 }
-    END { print fn }')"
-  if [ -z "$deb" ]; then
-    echo "错误: 索引中找不到 $pkg (suite=$SUITE)" >&2
-    exit 1
-  fi
-  curl -fsSL "$REPO/$deb" -o "$TMP/$(basename "$deb")"
-  echo "==> 已下载 $(basename "$deb")"
-done
-
-# 本地 .deb 交给 apt 安装, 依赖从发行版官方库解析, 不注册 docker 源
-sudo apt-get install -y \
-  "$TMP"/docker-ce_*.deb "$TMP"/docker-ce-cli_*.deb "$TMP"/containerd.io_*.deb \
-  "$TMP"/docker-buildx-plugin_*.deb "$TMP"/docker-compose-plugin_*.deb
-
-# ---- Verification ----
-# 容器内 dockerd 起不来属预期 (无特权), 验证 CLI 与插件落地即可。
-docker --version
-docker compose version
-echo "已安装: Docker Engine (官方 .deb, suite=$SUITE, 未注册第三方源)"
-DOTFILE_EOF_3
-cat > "$DF_TMPDIR/script-04.sh" <<'DOTFILE_EOF_4'
-#!/usr/bin/env bash
 # Starship 官方安装脚本, 装到用户目录 (无需 root)。
 set -euo pipefail
 
@@ -420,8 +362,8 @@ curl -fsSL https://starship.rs/install.sh | sh -s -- --yes --bin-dir "$DEST"
 echo "==> 验证安装"
 "$DEST/starship" --version
 echo "已安装: $DEST/starship"
-DOTFILE_EOF_4
-cat > "$DF_TMPDIR/script-05.sh" <<'DOTFILE_EOF_5'
+DOTFILE_EOF_3
+cat > "$DF_TMPDIR/script-04.sh" <<'DOTFILE_EOF_4'
 #!/usr/bin/env bash
 # 全局安装 hexo-cli。
 # node/npm 由 nodejs 模块经 nvm 提供 (装在用户目录, npm -g 无需提权);
@@ -441,116 +383,74 @@ npm install -g hexo-cli
 echo "==> 验证: hexo version"
 hexo version
 echo "已安装: hexo-cli (npm -g: $(command -v hexo))"
-DOTFILE_EOF_5
-cat > "$DF_TMPDIR/script-06.sh" <<'DOTFILE_EOF_6'
-#!/usr/bin/env bash
-# 配置 Intel oneAPI 官方 apt 源 (官方推荐方式: keyring + signed-by, 取代已废弃的 apt-key)。
-#   密钥: https://apt.repos.intel.com/intel-gpg-keys/GPG-PUB-KEY-INTEL-SW-PRODUCTS.PUB
-#   源:   deb [signed-by=...] https://apt.repos.intel.com/oneapi all main
-# 源使用 "all" 发行版, 不区分 Ubuntu 版本 (26.04 等新版本可直接使用)。
-set -euo pipefail
-export DEBIAN_FRONTEND=noninteractive
-
-# 生成器顶层的 sudo 垫片传不进嵌入脚本的子进程, 这里自行兜底 (root-无-sudo 容器)。
-if [ "$(id -u)" = 0 ] && ! command -v sudo >/dev/null 2>&1; then
-  sudo() { "$@"; }
-fi
-
-KEYRING="/usr/share/keyrings/oneapi-archive-keyring.gpg"
-
-tmp_pub="$(mktemp)"
-tmp_gpg="$(mktemp)"
-trap 'rm -f "$tmp_pub" "$tmp_gpg"' EXIT
-
-echo "==> 下载 Intel GPG 公钥并转为 binary keyring"
-curl -fsSL https://apt.repos.intel.com/intel-gpg-keys/GPG-PUB-KEY-INTEL-SW-PRODUCTS.PUB -o "$tmp_pub"
-gpg --yes --dearmor -o "$tmp_gpg" "$tmp_pub"
-sudo install -m 0644 "$tmp_gpg" "$KEYRING"
-
-echo "==> 写入 /etc/apt/sources.list.d/oneapi.list"
-echo "deb [signed-by=${KEYRING}] https://apt.repos.intel.com/oneapi all main" | sudo tee /etc/apt/sources.list.d/oneapi.list
-
-# --allow-releaseinfo-change: Intel 偶尔调整仓库 Label, 重跑时避免交互确认卡死。
-echo "==> apt-get update 刷新包索引"
-sudo apt-get update --allow-releaseinfo-change
-
-# --- Verification ---
-# 本脚本只配源、不装包, 「装成了什么」= Intel 源是否真的被 apt 采纳。apt-get update
-# 跑完只说明网络可达; 真正的判据是 Intel 索引通过了 keyring 签名校验并进入包缓存,
-# 即 apt-cache policy 在 intel-basekit (本模块要装的主包) 的版本表里
-# 列出 https://apt.repos.intel.com/oneapi 的候选版本。看不到说明 keyring/list 有误,
-# 立即 exit 1 让整条安装链失败, 而不是留下一个看似成功的坏源。
-echo "==> Verification: apt-cache policy intel-oneapi-compiler-dpcpp-cpp"
-policy="$(apt-cache policy intel-oneapi-compiler-dpcpp-cpp)"
-echo "$policy"
-if ! grep -qF 'https://apt.repos.intel.com/oneapi' <<<"$policy"; then
-  echo "错误: apt-cache policy intel-oneapi-compiler-dpcpp-cpp 未看到来自 https://apt.repos.intel.com/oneapi 的候选版本, Intel 源未生效" >&2
-  exit 1
-fi
-echo "已配置: /etc/apt/sources.list.d/oneapi.list (keyring: ${KEYRING})"
-DOTFILE_EOF_6
+DOTFILE_EOF_4
 df_mod_essentials() {
-  df_step 'sudo apt-get update -qq'
-  df_step 'sudo apt-get install -y htop tree curl jq'
+  df_step 'sudo dnf install -y htop tree curl jq'
   df_step 'htop --version | head -1'
   df_step 'jq --version'
   df_step 'tree --version | head -1'
   df_step 'curl --version | head -1'
 }
 df_mod_git() {
-  df_step 'sudo apt-get install -y git'
+  df_step 'sudo dnf install -y git'
   df_step 'git --version'
 }
 df_mod_buildenv() {
-  df_step 'sudo apt-get install -y build-essential llvm clang cmake ninja-build'
+  df_step 'sudo dnf install -y gcc gcc-c++ make llvm clang cmake ninja-build'
   df_step 'gcc --version | head -1'
   df_step 'clang --version | head -1'
   df_step 'cmake --version | head -1'
   df_step 'ninja --version'
 }
 df_mod_nodejs() {
-  df_step 'sudo apt-get install -y curl ca-certificates libatomic1'
+  df_step 'sudo dnf install -y curl ca-certificates libatomic'
   df_step_embed "$DF_TMPDIR/script-01.sh" './scripts/install-nvm.sh'
 }
 df_mod_uv() {
-  df_step 'sudo apt-get install -y curl ca-certificates'
+  df_step 'sudo dnf install -y curl ca-certificates'
   df_step_embed "$DF_TMPDIR/script-02.sh" './scripts/install.sh'
 }
 df_mod_neovim() {
-  df_step 'sudo apt-get install -y neovim ripgrep fd-find curl'
-  df_step 'sudo ln -sf /usr/bin/fdfind /usr/local/bin/fd'
+  df_step 'sudo dnf install -y neovim ripgrep fd-find curl'
   df_step 'nvim --version | head -1'
   df_step 'rg --version | head -1'
   df_step 'fd --version | head -1'
 }
 df_mod_docker() {
-  df_step 'sudo apt-get install -y curl ca-certificates'
-  df_step_embed "$DF_TMPDIR/script-03.sh" './scripts/install-docker-debs.sh'
+  df_step 'sudo rpm --import https://download.docker.com/linux/fedora/gpg'
+  df_step 'sudo dnf install -y --repofrompath docker-ce,https://download.docker.com/linux/fedora/$(rpm -E %fedora)/x86_64/stable docker-ce docker-ce-cli containerd.io docker-buildx-plugin docker-compose-plugin'
+  df_step 'docker --version'
+  df_step 'containerd --version'
+  df_step 'runc --version'
+  df_step 'docker buildx version'
+  df_step 'docker compose version'
 }
 df_mod_starship() {
-  df_step 'sudo apt-get install -y curl'
-  df_step_embed "$DF_TMPDIR/script-04.sh" './scripts/install.sh'
+  df_step 'sudo dnf install -y curl'
+  df_step_embed "$DF_TMPDIR/script-03.sh" './scripts/install.sh'
 }
 df_mod_hexo() {
-  df_step_embed "$DF_TMPDIR/script-05.sh" './scripts/install-hexo.sh'
+  df_step_embed "$DF_TMPDIR/script-04.sh" './scripts/install-hexo.sh'
 }
 df_mod_cuda_toolkit() {
-  df_step 'sudo apt-get install -y nvidia-cuda-toolkit'
-  df_step 'nvcc --version | tail -2'
+  df_step 'sudo rpmkeys --import https://developer.download.nvidia.com/compute/cuda/repos/fedora44/x86_64/73CD9B30.pub'
+  df_step 'sudo dnf install -y --repofrompath cuda-fedora44,https://developer.download.nvidia.com/compute/cuda/repos/fedora44/x86_64 cuda-toolkit'
+  df_step '/usr/local/cuda/bin/nvcc --version | tail -2'
 }
 df_mod_oneapi() {
-  df_step 'sudo apt-get install -y curl gnupg'
-  df_step_embed "$DF_TMPDIR/script-06.sh" './scripts/setup-intel-repo.sh'
-  df_step 'sudo apt-get install -y intel-oneapi-compiler-dpcpp-cpp'
+  df_step 'sudo rpm --import https://yum.repos.intel.com/intel-gpg-keys/GPG-PUB-KEY-INTEL-SW-PRODUCTS.PUB'
+  df_step 'sudo dnf install -y --repofrompath=intel-oneapi,https://yum.repos.intel.com/oneapi --setopt=intel-oneapi.gpgcheck=1 intel-oneapi-compiler-dpcpp-cpp'
+  df_step '/opt/intel/oneapi/compiler/latest/bin/icx --version | head -1'
+  df_step '/opt/intel/oneapi/compiler/latest/bin/icpx --version | head -1'
 }
 df_mod_rocm() {
-  df_step 'sudo apt-get install -y --no-install-recommends hipcc rocminfo rocm-smi'
+  df_step 'sudo dnf install -y hipcc rocminfo rocm-smi'
   df_step 'hipcc --version | head -3'
 }
 df_mod_agentharness() {
   df_step '. $HOME/.nvm/nvm.sh && nvm use --silent default && npm install -g @anthropic-ai/claude-code @minimax-ai/code zcode-cli opencode-ai'
   df_step '. $HOME/.nvm/nvm.sh && nvm use --silent default && npm install -g --ignore-scripts @earendil-works/pi-coding-agent'
-  df_step 'sudo apt-get install -y curl ca-certificates && curl -fsSL https://hermes-agent.nousresearch.com/install.sh | HERMES_HOME=$HOME/.agentharness/hermes bash'
+  df_step 'sudo dnf install -y curl ca-certificates && curl -fsSL https://hermes-agent.nousresearch.com/install.sh | HERMES_HOME=$HOME/.agentharness/hermes bash'
   df_step 'mkdir -p $HOME/.agentharness/hermes/bin && mv $HOME/.local/bin/hermes $HOME/.agentharness/hermes/bin/hermes'
   df_step '$HOME/.agentharness/hermes/bin/hermes pm repair'
   df_step '. $HOME/.nvm/nvm.sh && nvm use --silent default && claude --version | head -1'
@@ -600,7 +500,7 @@ if [ "$DF_TUI_SEL" -eq 1 ]; then
   # 注意: 条目是多行的 (树状), 输出必须用记录分隔符 \035 原子读取, 按行读会把树状子行
   #       误当独立选择项喂给 df_pick_name, 然后被 set -e 无声击毙
   DF_PICKED_RAW="$("$DF_GUM" choose --no-limit --ordered --output-delimiter $'\035' \
-    --header "选择要安装的模块 (↑↓ 移动, x 勾选/取消, 回车确认) — 目标: ubuntu@22.04" \
+    --header "选择要安装的模块 (↑↓ 移动, x 勾选/取消, 回车确认) — 目标: fedora@44" \
     --selected-prefix "[✅] " --unselected-prefix "[  ] " \
     --selected.foreground 2 --item.foreground 7 \
     --selected "${DF_DEFAULTS#,}" "${DF_ITEMS[@]}" || true)"
@@ -618,7 +518,7 @@ if [ "$DF_TUI_SEL" -eq 1 ]; then
     fi
   done <<<"$DF_PICKED_RAW"
   df_check_requires "${DF_PICKED[@]}"
-  "$DF_GUM" confirm "安装 ${#DF_PICKED[@]} 个模块到 ubuntu@22.04?" || { info "已取消"; exit 0; }
+  "$DF_GUM" confirm "安装 ${#DF_PICKED[@]} 个模块到 fedora@44?" || { info "已取消"; exit 0; }
 else
   DF_PICKED=("${DF_MODULES[@]}")
 fi

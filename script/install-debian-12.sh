@@ -240,10 +240,10 @@ df_item_neovim='neovim — Neovim 编辑器 + 常用依赖
      ├─ neovim
      ├─ ripgrep
      └─ fd (fdfind 兼容链接)'
-df_desc_docker='Docker Engine (官方 .deb 离线安装, 不注册第三方源)'
+df_desc_docker='Docker Engine (官方离线包一次性安装, 不注册第三方源)'
 df_requires_docker=''
 DF_SECTION_docker='debian'
-df_item_docker='docker — Docker Engine (官方 .deb 离线安装, 不注册第三方源)
+df_item_docker='docker — Docker Engine (官方离线包一次性安装, 不注册第三方源)
      ├─ docker-ce
      ├─ docker-ce-cli
      ├─ containerd.io
@@ -259,23 +259,24 @@ df_requires_hexo='nodejs'
 DF_SECTION_hexo='debian'
 df_item_hexo='hexo — Hexo 静态博客框架 (hexo-cli)
      └─ hexo-cli (npm -g, 经 nvm 的 node)'
-df_desc_cuda_toolkit='NVIDIA CUDA Toolkit (Ubuntu 档案库官方包; 26.04 为 cuda-toolkit 13.x 元包, 旧目标为 nvidia-cuda-toolkit)'
+df_desc_cuda_toolkit='NVIDIA CUDA Toolkit (Ubuntu 档案库官方包; 26.04 为 cuda-toolkit 13.x 元包, 旧目标为 nvidia-cuda-toolkit; Fedora 走 NVIDIA 官方源临时仓库)'
 df_requires_cuda_toolkit='buildenv'
 DF_SECTION_cuda_toolkit='debian'
-df_item_cuda_toolkit='cuda-toolkit — NVIDIA CUDA Toolkit (Ubuntu 档案库官方包; 26.04 为 cuda-toolkit 13.x 元包, 旧目标为 nvidia-cuda-toolkit)
+df_item_cuda_toolkit='cuda-toolkit — NVIDIA CUDA Toolkit (Ubuntu 档案库官方包; 26.04 为 cuda-toolkit 13.x 元包, 旧目标为 nvidia-cuda-toolkit; Fedora 走 NVIDIA 官方源临时仓库)
      ├─ cuda-toolkit 元包 (26.04, 跟随最新 13.x)
      ├─ nvidia-cuda-toolkit (24.04/22.04/debian12)
+     ├─ cuda-toolkit 元包 (fedora, NVIDIA 官方源临时仓库)
      └─ nvcc + 开发库 + 工具, 不含 GPU 驱动'
-df_desc_oneapi='Intel oneAPI 工具链 (DPC++/icx; 官方 apt 仓 — 上游无单组件离线形式, 离线全家桶数 GB, 按约定退回仓库形式)'
+df_desc_oneapi='Intel oneAPI 工具链 (DPC++/icx; 官方 apt/yum 仓 — 上游无单组件离线形式, 离线全家桶数 GB, 按约定退回仓库形式)'
 df_requires_oneapi=''
 DF_SECTION_oneapi='debian'
-df_item_oneapi='oneapi — Intel oneAPI 工具链 (DPC++/icx; 官方 apt 仓 — 上游无单组件离线形式, 离线全家桶数 GB, 按约定退回仓库形式)
-     ├─ oneAPI apt 源 (apt.repos.intel.com/oneapi, GPG keyring + signed-by)
+df_item_oneapi='oneapi — Intel oneAPI 工具链 (DPC++/icx; 官方 apt/yum 仓 — 上游无单组件离线形式, 离线全家桶数 GB, 按约定退回仓库形式)
+     ├─ oneAPI 官方源 (apt: keyring+signed-by 常驻 / dnf: repofrompath 一次性)
      └─ intel-oneapi-compiler-dpcpp-cpp -> icx / icpx / DPC++ (2026.x, 约 1 GiB 下载)'
-df_desc_rocm='AMD ROCm (Ubuntu 档案库官方包; 26.04 为 rocm 7.1 元包, 旧目标为 hipcc/rocminfo 5.7 组件)'
+df_desc_rocm='AMD ROCm (Ubuntu/Fedora 档案库官方包; 26.04 为 rocm 7.1 元包, 旧目标为 hipcc/rocminfo 5.7 组件)'
 df_requires_rocm=''
 DF_SECTION_rocm='debian'
-df_item_rocm='rocm — AMD ROCm (Ubuntu 档案库官方包; 26.04 为 rocm 7.1 元包, 旧目标为 hipcc/rocminfo 5.7 组件)
+df_item_rocm='rocm — AMD ROCm (Ubuntu/Fedora 档案库官方包; 26.04 为 rocm 7.1 元包, 旧目标为 hipcc/rocminfo 5.7 组件)
      ├─ rocm 元包 (26.04: 7.1)
      └─ hipcc / rocminfo / rocm-smi (旧目标: 5.7)'
 df_desc_agentharness='Agent CLI 全家桶 (npm 全局安装; hermes 走官方安装器收在 ~/.agentharness)'
