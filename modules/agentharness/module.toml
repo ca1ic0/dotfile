@@ -1,0 +1,29 @@
+[module]
+name = "agentharness"
+description = "Agent CLI 全家桶, 统一收纳到 ~/.agentharness/<工具名>/"
+groups = ["agentharness"]
+order = 46
+requires = ["nodejs"]
+content = ["claude (@anthropic-ai/claude-code)", "pi (@earendil-works/pi-coding-agent)", "mcode (@minimax-ai/code)", "zcode-cli", "opencode (opencode-ai)", "hermes (官方安装器, HERMES_HOME)"]
+
+[debian]
+# 选型 upstream first: 五个 CLI 均为官方 npm 包 (与各自官方安装器同源),
+# npm --prefix 把 lib+bin 全部收进统一路径, 卸载即删目录;
+# hermes 无 npm 包, 走官方安装器 + HERMES_HOME 环境变量定路径。
+# npm 系命令需先加载 nvm (非交互 shell 不读 ~/.bashrc)。
+install = [
+  ". $HOME/.nvm/nvm.sh && nvm use --silent default && npm install -g --prefix $HOME/.agentharness/claude @anthropic-ai/claude-code",
+  ". $HOME/.nvm/nvm.sh && nvm use --silent default && npm install -g --ignore-scripts --prefix $HOME/.agentharness/pi @earendil-works/pi-coding-agent",
+  ". $HOME/.nvm/nvm.sh && nvm use --silent default && npm install -g --prefix $HOME/.agentharness/minimax @minimax-ai/code",
+  ". $HOME/.nvm/nvm.sh && nvm use --silent default && npm install -g --prefix $HOME/.agentharness/zcode zcode-cli",
+  ". $HOME/.nvm/nvm.sh && nvm use --silent default && npm install -g --prefix $HOME/.agentharness/opencode opencode-ai",
+  "sudo apt-get install -y curl ca-certificates && curl -fsSL https://hermes-agent.nousresearch.com/install.sh | HERMES_HOME=$HOME/.agentharness/hermes bash",
+  "mkdir -p $HOME/.agentharness/hermes/bin && mv $HOME/.local/bin/hermes $HOME/.agentharness/hermes/bin/hermes",
+  "$HOME/.agentharness/hermes/bin/hermes pm repair",
+  "$HOME/.agentharness/claude/bin/claude --version | head -1",
+  "$HOME/.agentharness/pi/bin/pi --version | head -1",
+  "$HOME/.agentharness/minimax/bin/mcode --version | head -1",
+  "$HOME/.agentharness/zcode/bin/zcode-cli --version | head -1",
+  "$HOME/.agentharness/opencode/bin/opencode --version | head -1",
+  "$HOME/.agentharness/hermes/bin/hermes --version | head -1",
+]

@@ -136,6 +136,16 @@ install = "sudo pacman -S --needed --noconfirm docker"
 3. 有自定义安装逻辑就放 `modules/<name>/scripts/`, 在 install 数组里以 `./scripts/xxx.sh` 引用
 4. `uv run python dotfile.py validate` 校验, `plan --target ...` 预览
 
+### 软件添加约定
+
+- **Upstream First**: 安装通道选上游推荐的方式 — 先查官方文档列出的通道;
+  多通道时选与布局目标一致的那条; 发行版档案库优先于厂商第三方源
+  (写脚本前先 `apt-cache policy`)。详见 `~/.agents/skills/install-script/SKILL.md`
+- **一个软件包一个模块一个路径**: 功能内聚的一组软件就写成一个 module.toml
+  (如 agentharness: 六个 agent CLI 一个文件、几行 npm), 统一收纳在一个根
+  路径下 (`~/.agentharness/<工具名>/`)。优先用上游环境变量或 npm `--prefix`
+  原生实现; 结尾以绝对路径逐个验证 (防 PATH 未生效)
+
 ## 目录结构
 
 ```
