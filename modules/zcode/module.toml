@@ -1,0 +1,10 @@
+[module]
+name = "zcode"
+description = "ZCode CLI (智谱 GLM 官方终端智能体入口)"
+groups = ["agentharness"]
+order = 49
+requires = ["nodejs"]
+content = ["zcode-cli -> zcode"]
+
+[debian]
+install = ["./scripts/install.sh"]

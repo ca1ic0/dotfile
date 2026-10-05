@@ -1,13 +1,10 @@
 [module]
 name = "hexo"
-description = "Hexo 静态博客框架 (Node.js + hexo-cli)"
+description = "Hexo 静态博客框架 (hexo-cli)"
 groups = ["dev"]
 order = 35
-requires = []
-content = ["nodejs", "npm", "hexo-cli"]
+requires = ["nodejs"]
+content = ["hexo-cli (npm -g, 经 nvm 的 node)"]
 
 [debian]
-install = [
-  "sudo apt-get install -y nodejs npm",
-  "./scripts/install-hexo.sh",
-]
+install = ["./scripts/install-hexo.sh"]

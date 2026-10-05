@@ -1,0 +1,13 @@
+[module]
+name = "nodejs"
+description = "Node.js 环境 (nvm + 最新版 node/npm)"
+groups = ["dev"]
+order = 14
+requires = []
+content = ["nvm (~/.nvm, 官方安装器)", "最新版 node + npm (nvm install node)"]
+
+[debian]
+install = [
+  "sudo apt-get install -y curl ca-certificates libatomic1",
+  "./scripts/install-nvm.sh",
+]

@@ -47,9 +47,12 @@ class TestRenderE2E(unittest.TestCase):
     def test_commands_and_script_embedded(self):
         self.assertIn("df_step 'sudo apt-get install -y git'", self.script_all)
         self.assertIn("df_step 'sudo apt-get install -y neovim ripgrep fd-find curl'", self.script_all)
-        # starship 的官方安装脚本被完整嵌入
+        # starship 的官方安装脚本被完整嵌入 (嵌入编号随模块增删变化, 不写死)
         self.assertIn("https://starship.rs/install.sh", self.script_all)
-        self.assertIn("df_step_embed \"$DF_TMPDIR/script-01.sh\" './scripts/install.sh'", self.script_all)
+        self.assertRegex(
+            self.script_all,
+            r"df_step_embed \"\$DF_TMPDIR/script-\d+\.sh\" '\./scripts/install\.sh'",
+        )
 
     def test_tui_structure(self):
         # gum 自动引导 + 交互选择 + 模块注册表

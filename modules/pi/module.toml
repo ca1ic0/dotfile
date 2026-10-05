@@ -1,0 +1,10 @@
+[module]
+name = "pi"
+description = "pi coding agent (badlogic/earendil-works, 官方安装器)"
+groups = ["agentharness"]
+order = 46
+requires = ["nodejs"]
+content = ["pi (~/.pi/agent/bin, 官方安装器固定依赖版本)", "运行时使用 nvm 管理的 Node"]
+
+[debian]
+install = ["./scripts/install.sh"]

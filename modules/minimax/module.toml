@@ -1,0 +1,10 @@
+[module]
+name = "minimax"
+description = "MiniMax Code 终端编码智能体 (mcode)"
+groups = ["agentharness"]
+order = 48
+requires = ["nodejs"]
+content = ["@minimax-ai/code -> mcode / mcode-tools"]
+
+[debian]
+install = ["./scripts/install.sh"]

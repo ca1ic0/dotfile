@@ -25,11 +25,13 @@ if [ -z "$CODENAME" ]; then
   exit 1
 fi
 
+echo "==> 安装 GPG keyring 到 /etc/apt/keyrings/docker.asc"
 sudo install -m 0755 -d /etc/apt/keyrings
 sudo curl -fsSL "https://download.docker.com/linux/${REPO_ID}/gpg" -o /etc/apt/keyrings/docker.asc
 sudo chmod a+r /etc/apt/keyrings/docker.asc
 
-sudo tee /etc/apt/sources.list.d/docker.sources >/dev/null <<EOF
+echo "==> 写入 deb822 源文件 /etc/apt/sources.list.d/docker.sources"
+sudo tee /etc/apt/sources.list.d/docker.sources <<EOF
 Types: deb
 URIs: https://download.docker.com/linux/${REPO_ID}
 Suites: ${CODENAME}
@@ -38,4 +40,24 @@ Architectures: $(dpkg --print-architecture)
 Signed-By: /etc/apt/keyrings/docker.asc
 EOF
 
+echo "==> apt-get update 刷新索引"
 sudo apt-get update
+
+# ---------------------------------------------------------------------------
+# Verification — 确认脚本到底配置成了什么
+# 用意: 本脚本只配源、不装包, 没有二进制可跑 --version, 验证对象是「源已生效」:
+#   1. keyring 与 deb822 源文件确实落盘且非空;
+#   2. apt-cache policy 查本模块要装的主包 docker-ce, 完整 policy 输出先原样
+#      打印, 再 grep 断言版本表里出现 download.docker.com/linux/${REPO_ID}
+#      的条目 — 即 apt 真的从这个源拿到了 docker-ce 的候选版本。若 suite/
+#      component/arch 配错, update 阶段拿不到该源的 Packages 索引 (apt-get
+#      update 对个别索引失败可能只发 warning 仍以 0 退出, 所以不能只靠它
+#      的退出码), 这里就匹配不到, grep 非零退出, 由开头的 set -e 让整个
+#      脚本失败。grep 命中的源条目直接打印留档, 不吞任何输出。
+echo "==> 验证 Docker 源已生效"
+test -s /etc/apt/keyrings/docker.asc
+test -s /etc/apt/sources.list.d/docker.sources
+POLICY="$(apt-cache policy docker-ce)"
+echo "$POLICY"
+echo "$POLICY" | grep -F "https://download.docker.com/linux/${REPO_ID}"
+echo "已配置: Docker 官方 apt 源 (linux/${REPO_ID}, suite=${CODENAME}, keyring=/etc/apt/keyrings/docker.asc)"

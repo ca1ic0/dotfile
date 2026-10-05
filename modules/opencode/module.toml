@@ -1,0 +1,13 @@
+[module]
+name = "opencode"
+description = "opencode 终端编码智能体 (sst, 官方安装器)"
+groups = ["agentharness"]
+order = 50
+requires = []
+content = ["opencode (官方安装器到用户目录)"]
+
+[debian]
+install = [
+  "sudo apt-get install -y curl ca-certificates",
+  "./scripts/install.sh",
+]

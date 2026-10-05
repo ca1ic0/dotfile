@@ -1,7 +1,7 @@
 [module]
 name = "hermes"
 description = "Nous Research Hermes Agent (CLI/TUI/gateway, 官方安装器)"
-groups = ["dev"]
+groups = ["dev", "agentharness"]
 order = 45
 content = ["hermes 命令 (~/.local/bin)", "独立运行时: uv + Python 3.14 + Node.js + ripgrep + ffmpeg (~/.hermes)", "agent-browser + 固定 Chromium + cua-driver (默认; 可跳过)"]
 
