@@ -1,6 +1,6 @@
 [module]
 name = "rocm"
-description = "AMD ROCm (Ubuntu/Fedora 档案库官方包; 26.04 为 rocm 7.1 元包, 旧目标为 hipcc/rocminfo 5.7 组件)"
+description = "AMD ROCm (各目标档案库官方包; 26.04 为 rocm 7.1 元包, 其余为 hipcc/rocminfo 组件)"
 groups = ["gpu"]
 order = 42
 requires = []

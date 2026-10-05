@@ -1,0 +1,32 @@
+[module]
+name = "tools"
+description = "终端效率工具: yazi 文件管理器 + fzf 模糊查找"
+groups = ["dev"]
+order = 17
+requires = []
+content = ["yazi + ya (GitHub releases 官方产物)", "fzf (档案库直装)"]
+
+[debian]
+# yazi: 五目标档案库均无 (同名陷阱排查过), 上游 sxyazi/yazi 发布官方 .deb 资产
+#   (releases/latest/download/yazi-x86_64-unknown-linux-gnu.deb, 容器实测 200;
+#   仅 x86_64), 一行内联直装, 含伴生 ya 命令, CalVer 版本随 latest 走。
+# fzf: 档案库均收录 (26.04→0.67.0 / 24.04→0.44.1 / debian13→0.60.3 /
+#   debian12→0.38.0, 均为 junegunn/fzf 本尊), 直装。
+install = [
+  "sudo apt-get install -y curl fzf",
+  "fzf --version",
+  "curl -fsSL -o /tmp/yazi.deb https://github.com/sxyazi/yazi/releases/latest/download/yazi-x86_64-unknown-linux-gnu.deb && sudo apt-get install -y /tmp/yazi.deb",
+  "yazi --version",
+  "ya --version",
+]
+
+[fedora]
+# yazi: fedora 无 .deb 资产, 官方 zip (内含 yazi 主程序 + ya 伴生命令 + completions),
+# 解压装双二进制; fzf 走 fedora 档案库 (repoquery 实证 updates 源 0.74.4-1.fc44)。
+install = [
+  "sudo dnf install -y curl fzf unzip",
+  "fzf --version",
+  "curl -fsSL -o /tmp/yazi.zip https://github.com/sxyazi/yazi/releases/latest/download/yazi-x86_64-unknown-linux-gnu.zip && unzip -oq /tmp/yazi.zip -d /tmp/yazi && sudo install -m 755 /tmp/yazi/*/yazi /tmp/yazi/*/ya /usr/local/bin/",
+  "yazi --version",
+  "ya --version",
+]

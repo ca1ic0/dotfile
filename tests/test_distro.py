@@ -36,7 +36,9 @@ class TestSectionKey(unittest.TestCase):
         self.assertNotEqual(distro.parse_section_key("ubuntu@22.04"), distro.parse_section_key("ubuntu@22"))
 
     def test_invalid(self):
-        for bad in ["", "opensuse", "debian@12", "rocky@8@9", "rocky@x", "rocky@8."]:
+        # 注: debian@12/debian@13 是合法 distro 段 (debian 的 id 与 family 同名);
+        # family 带版本的反例用 redhat@9
+        for bad in ["", "opensuse", "redhat@9", "rocky@8@9", "rocky@x", "rocky@8."]:
             with self.assertRaises(ValueError, msg=bad):
                 distro.parse_section_key(bad)
 

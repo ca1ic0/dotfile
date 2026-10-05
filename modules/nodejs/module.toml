@@ -6,19 +6,32 @@ order = 14
 requires = []
 content = ["nvm (~/.nvm, 官方安装器)", "最新版 node + npm (nvm install node)"]
 
-[debian]
+[ubuntu]
+# libatomic1: node 官方二进制实测链接 libatomic.so.1 (ldd 实证), 缺它起不来;
+# ubuntu 24.04/26.04 档案库均提供该包。
 install = [
   "sudo apt-get install -y curl ca-certificates libatomic1",
   "./scripts/install-nvm.sh",
 ]
 
+["debian@12"]
+install = [
+  "sudo apt-get install -y curl ca-certificates libatomic1",
+  "./scripts/install-nvm.sh",
+]
+
+["debian@13"]
+# trixie 已无 libatomic1 (GCC14 运行时合并, 容器实证 apt-cache 无候选),
+# 且新 glibc 下 node 官方二进制不再依赖它; curl/ca-certificates 直装。
+install = [
+  "sudo apt-get install -y curl ca-certificates",
+  "./scripts/install-nvm.sh",
+]
+
 [fedora]
-# 与 [debian] 段语义对齐: 同样的三前置包 + 同一个 nvm 安装脚本。三包全在
-# Fedora 44 档案库 (repoquery fc44 核实), dnf 直装, 无厂商源、无 --nogpgcheck 场景。
-# libatomic1 在 Fedora 叫 libatomic, 且并非徒劳对齐 — node 官方二进制实测链接
-# libatomic.so.1 (ldd: libatomic.so.1 => /lib64/libatomic.so.1), 缺它 node 起不来;
-# 安装与验证 (node/npm --version, 落点 ~/.nvm/versions/node/<版本>/bin/, 非
-# /usr/bin) 都在 scripts/install-nvm.sh 内置, 与发行版无关, 故段形状同 debian。
+# 同 [ubuntu] 段语义: 三前置包 (repoquery fc44 核实)。libatomic1 在 Fedora
+# 叫 libatomic, 且并非徒劳对齐 — node 官方二进制实测链接 libatomic.so.1。
+# 安装与验证都在 scripts/install-nvm.sh 内置, 与发行版无关。
 install = [
   "sudo dnf install -y curl ca-certificates libatomic",
   "./scripts/install-nvm.sh",

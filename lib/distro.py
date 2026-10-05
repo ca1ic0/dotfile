@@ -88,7 +88,9 @@ def parse_section_key(key: str) -> SectionKey:
     base, _, ver = k.partition("@")
     if "@" in ver:
         raise ValueError(f"OS 段键含多个 '@': {key!r}")
-    if base in FAMILIES:
+    # 注意: debian/arch 的 distro id 与 family 名同名, distro 表必须先判 —
+    # ["debian@13"] 是 distro 段, 不是 family 段
+    if base not in DISTRO_FAMILY and base in FAMILIES:
         if ver:
             raise ValueError(f"family 段不支持版本号: {key!r} (应挂在具体 distro 上, 如 rocky@8)")
     elif base not in DISTRO_FAMILY:

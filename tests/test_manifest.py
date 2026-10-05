@@ -69,7 +69,7 @@ install = "echo c"
             "install 类型错": '[module]\nname = "demo"\n\n[debian]\ninstall = 42\n',
             "install 空数组": '[module]\nname = "demo"\n\n[debian]\ninstall = []\n',
             "未知段键": '[module]\nname = "demo"\n\n[opensuse]\ninstall = "x"\n',
-            "family 带版本": '[module]\nname = "demo"\n\n["debian@12"]\ninstall = "x"\n',
+            "family 带版本": '[module]\nname = "demo"\n\n["redhat@9"]\ninstall = "x"\n',
             "段内未知字段": '[module]\nname = "demo"\n\n[debian]\ninstall = "x"\nnote = "hi"\n',
             "无 OS 段": '[module]\nname = "demo"\n',
             "groups 空": '[module]\nname = "demo"\ngroups = []\n\n[debian]\ninstall = "x"\n',
