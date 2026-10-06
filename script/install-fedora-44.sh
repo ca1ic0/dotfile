@@ -265,7 +265,7 @@ df_requires_rocm=''
 DF_SECTION_rocm='fedora'
 df_item_rocm='rocm — AMD ROCm (各目标档案库官方包; 26.04 为 rocm 7.1 元包, 其余为 hipcc/rocminfo 组件)
      ├─ rocm 元包 (26.04: 7.1)
-     └─ hipcc / rocminfo / rocm-smi (旧目标: 5.7)'
+     └─ hipcc + HIP 头文件/运行时 / rocminfo / rocm-smi'
 df_desc_agentharness='Agent CLI 全家桶 (npm 全局安装; hermes 走官方安装器收在 ~/.agentharness)'
 df_requires_agentharness='nodejs base'
 DF_SECTION_agentharness='fedora'
@@ -454,8 +454,9 @@ df_mod_oneapi() {
   df_step '/opt/intel/oneapi/compiler/latest/bin/icpx --version | head -1'
 }
 df_mod_rocm() {
-  df_step 'sudo dnf install -y hipcc rocminfo rocm-smi'
+  df_step 'sudo dnf install -y hipcc rocm-hip rocm-hip-devel rocminfo rocm-smi'
   df_step 'hipcc --version | head -3'
+  df_step 'printf '\''#include <hip/hip_runtime.h>\nint main(){return 0;}\n'\'' > /tmp/rocm-check.hip && hipcc /tmp/rocm-check.hip -o /tmp/rocm-check && rm -f /tmp/rocm-check /tmp/rocm-check.hip'
 }
 df_mod_agentharness() {
   df_step '. $HOME/.nvm/nvm.sh && nvm use --silent default && npm install -g @anthropic-ai/claude-code @minimax-ai/code zcode-cli opencode-ai'

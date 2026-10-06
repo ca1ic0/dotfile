@@ -265,7 +265,7 @@ df_requires_rocm=''
 DF_SECTION_rocm='ubuntu@26.04'
 df_item_rocm='rocm — AMD ROCm (各目标档案库官方包; 26.04 为 rocm 7.1 元包, 其余为 hipcc/rocminfo 组件)
      ├─ rocm 元包 (26.04: 7.1)
-     └─ hipcc / rocminfo / rocm-smi (旧目标: 5.7)'
+     └─ hipcc + HIP 头文件/运行时 / rocminfo / rocm-smi'
 df_desc_agentharness='Agent CLI 全家桶 (npm 全局安装; hermes 走官方安装器收在 ~/.agentharness)'
 df_requires_agentharness='nodejs base'
 DF_SECTION_agentharness='debian'
